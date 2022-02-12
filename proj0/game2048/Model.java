@@ -114,11 +114,62 @@ public class Model extends Observable {
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
 
+        board.setViewingPerspective(side);
+        int size = board.size();
+        // if board[i][j] is merged result, mergeMark[i][j] should be set to true
+        boolean[][] mergeMark = new boolean[size][size];
+        for (int i = size-2; i >= 0; i--) {
+            for (int j = 0; j < size; j++) {
+                Tile curTile = board.tile(j, i);
+                if (curTile == null) {
+                    continue;
+                }
+                changed = helperMove(curTile, i, j, mergeMark) || changed;
+            }
+        }
         checkGameOver();
         if (changed) {
             setChanged();
         }
+        board.setViewingPerspective(Side.NORTH);
         return changed;
+    }
+
+    private boolean helperMove(Tile t, int r, int c, boolean[][] mergeMark) {
+        Tile curCheck = null;
+        int checkRow = r;
+        // try to find the first tile at current tile's north direction
+        for (int i = r + 1; i < board.size(); i++) {
+            checkRow++;
+            curCheck = board.tile(c, i);
+            if (curCheck != null) {
+                break;
+            }
+        }
+        // if we find no tile at its north direction
+        if (curCheck == null) {
+            board.move(c, board.size() - 1, t);
+            return true;
+            // otherwise
+        } else {
+            // if the checked tile was NOT result from merging and two values equal, we merge them
+            if (curCheck.value() == t.value() && !mergeMark[c][checkRow]) {
+                board.move(c, checkRow, t);
+                score += board.tile(c, checkRow).value();
+                mergeMark[c][checkRow] = true;
+                return true;
+            } else {
+                // if the checked tile is just one space up to current tile
+                if (checkRow - 1 == r) {
+                    // return false to indicate no movement has happened
+                    return false;
+                } else {
+                    board.move(c, checkRow - 1, t);
+                    return true;
+                }
+            }
+        }
+
     }
 
     /** Checks if the game is over and sets the gameOver variable
@@ -174,12 +225,8 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // search for empty space
-        for (int i = 0; i < b.size(); i++) {
-            for (int j = 0; j < b.size(); j++) {
-                if (b.tile(i, j) == null) {
-                    return true;
-                }
-            }
+        if (emptySpaceExists(b)) {
+            return true;
         }
         //search for adjacent tiles with the same value
         for (int i = 0; i < b.size(); i++) {
