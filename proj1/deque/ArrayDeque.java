@@ -3,6 +3,7 @@ package deque;
 import java.util.Iterator;
 
 public class ArrayDeque<T> implements Iterable<T>{
+    private int capacity = 1000;
     private int size;
     private int nextFirst;
     private int nextLast;
@@ -10,20 +11,20 @@ public class ArrayDeque<T> implements Iterable<T>{
 
     public ArrayDeque() {
         this.size = 0;
-        array = (T[]) new Object[1000];
+        array = (T[]) new Object[capacity];
         nextFirst = 0;
         nextLast = 1;
     }
 
     public void addFirst(T item) {
         array[nextFirst] = item;
-        nextFirst = (nextFirst - 1) % size;
+        nextFirst = (nextFirst - 1) % capacity;
         size++;
     }
 
     public void addLast(T item) {
         array[nextLast] = item;
-        nextLast = (nextLast + 1) % size;
+        nextLast = (nextLast + 1) % capacity;
         size++;
     }
 
@@ -37,11 +38,11 @@ public class ArrayDeque<T> implements Iterable<T>{
 
     public void printDeque() {
         StringBuilder sb = new StringBuilder();
-        int curIndex = (nextFirst + 1) % size;
+        int curIndex = (nextFirst + 1) % capacity;
         while (curIndex != nextLast) {
             sb.append(array[curIndex].toString());
             sb.append(" ");
-            curIndex = (curIndex + 1) % size;
+            curIndex = (curIndex + 1) % capacity;
         }
         System.out.println(sb.toString());
     }
@@ -51,7 +52,7 @@ public class ArrayDeque<T> implements Iterable<T>{
             return null;
         }
 
-        nextLast = (nextLast - 1) % size;
+        nextLast = (nextLast - 1) % capacity;
         size--;
         // remove the reference in the array
         T returnItem = array[nextLast];
@@ -64,7 +65,7 @@ public class ArrayDeque<T> implements Iterable<T>{
             return null;
         }
 
-        nextFirst = (nextFirst + 1) % size;
+        nextFirst = (nextFirst + 1) % capacity;
         size--;
         // remove the reference in the array
         T returnItem = array[nextFirst];
@@ -77,7 +78,7 @@ public class ArrayDeque<T> implements Iterable<T>{
             return null;
         }
 
-        int curIndex = (index + 1) % size;
+        int curIndex = (index + 1) % capacity;
 
         return array[curIndex];
     }
@@ -88,7 +89,7 @@ public class ArrayDeque<T> implements Iterable<T>{
     }
 
     private class ArrayDequeIterator implements Iterator<T> {
-        int curIndex = (nextFirst + 1) % size;
+        int curIndex = (nextFirst + 1) % capacity;
 
         @Override
         public boolean hasNext() {
@@ -98,7 +99,7 @@ public class ArrayDeque<T> implements Iterable<T>{
         @Override
         public T next() {
             T returnItem = array[curIndex];
-            curIndex = (curIndex + 1) % size;
+            curIndex = (curIndex + 1) % capacity;
             return returnItem;
         }
     }
