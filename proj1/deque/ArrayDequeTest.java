@@ -10,9 +10,9 @@ public class ArrayDequeTest {
         ArrayDeque<Integer> ad = new ArrayDeque<>();
         LinkedListDeque<Integer> ld = new LinkedListDeque<>();
 
-        int N = 3000;
+        int N = 99999;
         for (int i = 0; i < N; i++) {
-            int caseIndicator = StdRandom.uniform(0, 1);
+            int caseIndicator = StdRandom.uniform(0, 6);
 
             switch (caseIndicator) {
                 case 0: // test addFirst
@@ -30,12 +30,18 @@ public class ArrayDequeTest {
                 case 2: // test removeLast
                     Integer arrayLastVal = ad.removeLast();
                     Integer linkLastVal = ld.removeLast();
+                    if (arrayLastVal == null || linkLastVal == null) {
+                        break;
+                    }
                     assertEquals(arrayLastVal, linkLastVal);
                     assertEquals(ad, ld);
                     break;
                 case 3: // test removeFirst
                     Integer arrayFirstVal = ad.removeFirst();
                     Integer linkFirstVal = ld.removeFirst();
+                    if (arrayFirstVal == null || linkFirstVal == null) {
+                        break;
+                    }
                     assertEquals(arrayFirstVal, linkFirstVal);
                     assertEquals(ad, ld);
                     break;
@@ -43,6 +49,9 @@ public class ArrayDequeTest {
                     int rdIndex = StdRandom.uniform(0, ad.size() + 10);
                     Integer arrayGetVal = ad.get(rdIndex);
                     Integer linkGetVal = ld.get(rdIndex);
+                    if (arrayGetVal == null || linkGetVal == null) {
+                        break;
+                    }
                     assertEquals(arrayGetVal, linkGetVal);
                     assertEquals(ad, ld);
                     break;

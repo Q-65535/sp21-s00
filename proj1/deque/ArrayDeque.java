@@ -10,7 +10,7 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
 
     public ArrayDeque() {
         this.size = 0;
-        array = (T[]) new Object[500];
+        array = (T[]) new Object[20];
         nextFirst = 0;
         nextLast = 1;
     }
@@ -19,10 +19,7 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
         T[] newArray = ((T[]) new Object[capacity]);
 
         if (nextFirst < nextLast) {
-//            System.arraycopy(array, nextFirst, newArray, nextFirst, size);
-
-
-            System.arraycopy(array, nextFirst, newArray, 0, size);
+            System.arraycopy(array, nextFirst, newArray, 0, size + 1);
             nextFirst = 0;
             nextLast = nextFirst + size + 1;
         } else {
@@ -43,8 +40,8 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
     }
 
     public void addFirst(T item) {
-        if (size >= array.length - 1) {
-            resize(size * 2);
+        if (size >= array.length - 2) {
+            resize(size * 2 + 10);
         }
         array[nextFirst] = item;
         nextFirst = Math.floorMod(nextFirst - 1, array.length);
@@ -52,8 +49,8 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
     }
 
     public void addLast(T item) {
-        if (size >= array.length - 1) {
-            resize(size * 2);
+        if (size >= array.length - 2) {
+            resize(size * 2 + 10);
         }
         array[nextLast] = item;
         nextLast = Math.floorMod(nextLast + 1, array.length);
@@ -88,8 +85,8 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
         array[nextLast] = null;
 
         // resizing
-        if (size < array.length / 4) {
-            resize(size / 2);
+        if (size < array.length / 4 && array.length > 10) {
+            resize(array.length / 2);
         }
 
         return returnItem;
@@ -105,11 +102,17 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
         // remove the reference in the array
         T returnItem = array[nextFirst];
         array[nextFirst] = null;
+
+        // resizing
+        if (size < array.length / 4 && array.length > 10) {
+            resize(array.length / 2);
+        }
+
         return returnItem;
     }
 
     public T get(int index) {
-        if (index >= size) {
+        if (index >= size || index < 0) {
             return null;
         }
 
