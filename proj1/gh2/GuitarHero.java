@@ -4,12 +4,12 @@ import edu.princeton.cs.algs4.StdAudio;
 import edu.princeton.cs.algs4.StdDraw;
 
 public class GuitarHero {
-    public static final String keyboard = "q2we4r5ty7u8i9op-[=zxdcfvgbnjmk,.;/' ";
 
     public static void main(String[] args) {
-        double[] CONCERTS = new double[keyboard.length()];
-        for (int i = 0; i < CONCERTS.length; i++) {
-            CONCERTS[i] = 440 * Math.pow(2, (i - 24) / 12);
+        final String keyboard = "q2we4r5ty7u8i9op-[=zxdcfvgbnjmk,.;/' ";
+        double[] concerts = new double[keyboard.length()];
+        for (int i = 0; i < concerts.length; i++) {
+            concerts[i] = 440 * Math.pow(2, (i - 24) / 12);
         }
         Integer[] map = new Integer[255];
         for (int i = 0; i < keyboard.length(); i++) {
@@ -17,9 +17,9 @@ public class GuitarHero {
             map[index] = i;
         }
 
-        GuitarString[] strings = new GuitarString[CONCERTS.length];
+        GuitarString[] strings = new GuitarString[concerts.length];
         for (int i = 0; i < strings.length; i++) {
-            strings[i] = new GuitarString(CONCERTS[i]);
+            strings[i] = new GuitarString(concerts[i]);
         }
 
         while (true) {
