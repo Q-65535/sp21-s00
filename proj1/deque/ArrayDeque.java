@@ -10,7 +10,7 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
 
     public ArrayDeque() {
         this.size = 0;
-        array = (T[]) new Object[10];
+        array = (T[]) new Object[500];
         nextFirst = 0;
         nextLast = 1;
     }
@@ -19,7 +19,12 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
         T[] newArray = ((T[]) new Object[capacity]);
 
         if (nextFirst < nextLast) {
-            System.arraycopy(array, nextFirst, newArray, nextFirst, size);
+//            System.arraycopy(array, nextFirst, newArray, nextFirst, size);
+
+
+            System.arraycopy(array, nextFirst, newArray, 0, size);
+            nextFirst = 0;
+            nextLast = nextFirst + size + 1;
         } else {
             // copy first part
             System.arraycopy(array, 0, newArray, 0, nextLast);
@@ -32,9 +37,9 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
             }
             // reposition the "nextFirst" index
             nextFirst = newEndIndex;
-
-            array = newArray;
         }
+
+        array = newArray;
     }
 
     public void addFirst(T item) {
@@ -81,6 +86,12 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
         // remove the reference in the array
         T returnItem = array[nextLast];
         array[nextLast] = null;
+
+        // resizing
+        if (size < array.length / 4) {
+            resize(size / 2);
+        }
+
         return returnItem;
     }
 
