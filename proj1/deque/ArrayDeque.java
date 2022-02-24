@@ -2,35 +2,59 @@ package deque;
 
 import java.util.Iterator;
 
-public class ArrayDeque<T> implements Iterable<T>{
-    private int capacity = 1000;
-    private int size;
-    private int nextFirst;
-    private int nextLast;
-    private T[] array;
+public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
+    protected int size;
+    protected int nextFirst;
+    protected int nextLast;
+    protected T[] array;
 
     public ArrayDeque() {
         this.size = 0;
-        array = (T[]) new Object[capacity];
+        array = (T[]) new Object[1000];
         nextFirst = 0;
         nextLast = 1;
     }
 
+    private void resize(int capacity) {
+        T[] newArray = ((T[]) new Object[capacity]);
+
+        if (nextFirst < nextLast) {
+            System.arraycopy(array, nextFirst, newArray, nextFirst, size);
+        } else {
+            // copy first part
+            System.arraycopy(array, 0, newArray, 0, nextLast);
+
+            // copy second part
+            int oldEndIndex = array.length - 1;
+            int newEndIndex = newArray.length - 1;
+            while (oldEndIndex != nextFirst) {
+                newArray[newEndIndex--] = array[oldEndIndex--];
+            }
+            // reposition the "nextFirst" index
+            nextFirst = newEndIndex;
+
+            array = newArray;
+        }
+    }
+
     public void addFirst(T item) {
+        if (size >= array.length - 1) {
+            resize(size * 2);
+        }
         array[nextFirst] = item;
-        nextFirst = Math.floorMod(nextFirst - 1, capacity);
+        nextFirst = Math.floorMod(nextFirst - 1, array.length);
         size++;
     }
 
     public void addLast(T item) {
+        if (size >= array.length - 1) {
+            resize(size * 2);
+        }
         array[nextLast] = item;
-        nextLast = Math.floorMod(nextLast + 1, capacity);
+        nextLast = Math.floorMod(nextLast + 1, array.length);
         size++;
     }
 
-    public boolean isEmpty() {
-        return size == 0;
-    }
 
     public int size() {
         return size;
@@ -38,11 +62,11 @@ public class ArrayDeque<T> implements Iterable<T>{
 
     public void printDeque() {
         StringBuilder sb = new StringBuilder();
-        int curIndex = Math.floorMod(nextFirst + 1, capacity);
+        int curIndex = Math.floorMod(nextFirst + 1, array.length);
         while (curIndex != nextLast) {
             sb.append(array[curIndex].toString());
             sb.append(" ");
-            curIndex = Math.floorMod(curIndex + 1, capacity);
+            curIndex = Math.floorMod(curIndex + 1, array.length);
         }
         System.out.println(sb.toString());
     }
@@ -52,7 +76,7 @@ public class ArrayDeque<T> implements Iterable<T>{
             return null;
         }
 
-        nextLast = Math.floorMod(nextLast - 1, capacity);
+        nextLast = Math.floorMod(nextLast - 1, array.length);
         size--;
         // remove the reference in the array
         T returnItem = array[nextLast];
@@ -65,7 +89,7 @@ public class ArrayDeque<T> implements Iterable<T>{
             return null;
         }
 
-        nextFirst = Math.floorMod(nextFirst + 1, capacity);
+        nextFirst = Math.floorMod(nextFirst + 1, array.length);
         size--;
         // remove the reference in the array
         T returnItem = array[nextFirst];
@@ -78,7 +102,7 @@ public class ArrayDeque<T> implements Iterable<T>{
             return null;
         }
 
-        int curIndex = Math.floorMod(index + 1, capacity);
+        int curIndex = Math.floorMod(index + 1, array.length);
 
         return array[curIndex];
     }
@@ -89,7 +113,7 @@ public class ArrayDeque<T> implements Iterable<T>{
     }
 
     private class ArrayDequeIterator implements Iterator<T> {
-        int curIndex = Math.floorMod(nextFirst + 1, capacity);
+        int curIndex = Math.floorMod(nextFirst + 1, array.length);
 
         @Override
         public boolean hasNext() {
@@ -99,7 +123,7 @@ public class ArrayDeque<T> implements Iterable<T>{
         @Override
         public T next() {
             T returnItem = array[curIndex];
-            curIndex = Math.floorMod(curIndex + 1, capacity);
+            curIndex = Math.floorMod(curIndex + 1, array.length);
             return returnItem;
         }
     }
