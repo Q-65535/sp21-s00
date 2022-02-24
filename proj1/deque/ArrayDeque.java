@@ -10,7 +10,7 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
 
     public ArrayDeque() {
         this.size = 0;
-        array = (T[]) new Object[1000];
+        array = (T[]) new Object[10];
         nextFirst = 0;
         nextLast = 1;
     }
@@ -102,7 +102,7 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
             return null;
         }
 
-        int curIndex = Math.floorMod(index + 1, array.length);
+        int curIndex = Math.floorMod(nextFirst + index + 1, array.length);
 
         return array[curIndex];
     }
@@ -136,19 +136,17 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
             return true;
         }
 
-        if (o.getClass() != this.getClass()) {
+        if (!(o instanceof Deque)) {
             return false;
         }
 
-        ArrayDeque<T> other = (ArrayDeque<T>) o;
-        if (this.size != other.size) {
+        Deque<T> other = (Deque<T>) o;
+        if (this.size != other.size()) {
             return false;
         }
 
-        Iterator<T> thisIt = this.iterator();
-        Iterator<T> otherIt = other.iterator();
-        while (thisIt.hasNext()) {
-            if (!thisIt.next().equals(otherIt.next())) {
+        for (int i = 0; i < size; i++) {
+            if (!this.get(i).equals(other.get(i))) {
                 return false;
             }
         }
