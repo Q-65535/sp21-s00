@@ -45,7 +45,5 @@ public class GuitarHero {
                 string.tic();
             }
         }
-
-
     }
 }
