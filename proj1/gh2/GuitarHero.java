@@ -8,10 +8,12 @@ public class GuitarHero {
     public static void main(String[] args) {
         final String keyboard = "q2we4r5ty7u8i9op-[=zxdcfvgbnjmk,.;/' ";
         double[] concerts = new double[keyboard.length()];
+        // construct the concerts according to the formula
         for (int i = 0; i < concerts.length; i++) {
             concerts[i] = 440 * Math.pow(2, (i - 24) / 12);
         }
-        Integer[] map = new Integer[255];
+        // map: character --> its index
+        Integer[] map = new Integer[256];
         for (int i = 0; i < keyboard.length(); i++) {
             char index = keyboard.charAt(i);
             map[index] = i;
