@@ -77,7 +77,7 @@ public class CapersRepository {
      */
     public static void celebrateBirthday(String name) throws IOException {
         // TODO
-        File dogFile = join(CAPERS_FOLDER, "Dogs", name);
+        File dogFile = join(CAPERS_FOLDER, "dogs", name);
         Dog dog = readObject(dogFile, Dog.class);
         dog.haveBirthday();
         dog.saveDog();
