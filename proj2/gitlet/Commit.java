@@ -56,6 +56,7 @@ public class Commit implements Serializable {
      */
     public Commit(String message) {
         this.date = new Date();
+        fileRefs = new TreeMap<>();
         this.message = message;
     }
 
@@ -72,6 +73,26 @@ public class Commit implements Serializable {
         this.fileRefs.putAll(newFileRefs);
 
         this.parent = parent;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public TreeMap<String, String> getFileRefs() {
+        return fileRefs;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public String getsParent() {
+        return sParent;
     }
 
     /**

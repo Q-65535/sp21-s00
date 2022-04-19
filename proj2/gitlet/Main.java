@@ -1,4 +1,5 @@
 package gitlet;
+import static gitlet.Repository.*;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author TODO
@@ -13,10 +14,14 @@ public class Main {
         String firstArg = args[0];
         switch(firstArg) {
             case "init":
-                Repository.init();
+                init();
                 break;
             case "add":
-                // TODO: handle the `add [filename]` command
+                if (args.length != 2) {
+                    throw new GitletException("specify the file to be added");
+                }
+                String fileName = args[1];
+                addFile(fileName);
                 break;
             // TODO: FILL THE REST IN
         }

@@ -1,6 +1,7 @@
 package gitlet;
 
 import java.io.File;
+import java.util.TreeMap;
 
 import static gitlet.Utils.*;
 
@@ -51,6 +52,11 @@ public class Repository {
      */
     public static final File CUR_HEAD = join(GITLET_DIR, "HEAD");
 
+    /**
+     * The staging area file
+     */
+    public static final File STAGING = join(GITLET_DIR, "staging");
+
 
     /* TODO: fill in the rest of this class. */
     public static void init() {
@@ -59,6 +65,7 @@ public class Repository {
             System.exit(0);
         } else {
             initDirs();
+            initStaging();
             // create initial commit
             Commit initial_commit = new Commit("initial commit");
             initial_commit.makePersistent();
@@ -73,6 +80,15 @@ public class Repository {
 
             System.out.println("gitlet initialization success!");
         }
+    }
+
+    /**
+     * Initialize the staging area. The staging area is a map that maps file name
+     * to a blob hash
+     */
+    private static void initStaging() {
+        TreeMap<String, String> staging_map = new TreeMap<>();
+        writeObject(STAGING, staging_map);
     }
 
     /**
@@ -145,5 +161,66 @@ public class Repository {
             return true;
         }
         return false;
+    }
+
+
+    public static void addFile(String fileName) {
+        // get file reference of current commit
+        File curCommitFile = join(COMMITS_DIR, parseHeadToHash());
+        Commit curCommit = readObject(curCommitFile, Commit.class);
+        TreeMap<String, String> fileRefs = curCommit.getFileRefs();
+
+        // get staging area
+        TreeMap<String, String> staging = readObject(STAGING, TreeMap.class);
+
+        // deal with the case where the file does not exist
+        if (!join(CWD, fileName).isFile()) {
+            if (fileRefs.containsKey(fileName)) {
+                staging.put(fileName, null);
+            } else {
+                if (staging.containsKey(fileName)) {
+                    staging.remove(fileName);
+                } else {
+                    throw new GitletException("file not valid: " + fileName);
+                }
+            }
+            writeObject(STAGING, staging);
+            return;
+        }
+
+        byte[] bytes = readContents(join(CWD, fileName));
+        String fileHash = sha1(bytes);
+        // if the file ref of current commit doesn't contain that file, create a new blob and stage it
+        if (!fileRefs.containsKey(fileName)) {
+            // write the file blob
+            writeContents(join(BLOBS_DIR, fileHash), bytes);
+            staging.put(fileName, fileHash);
+        } else {
+            String fileHashInCommit = fileRefs.get(fileName);
+            // if the file is identical to the file in current commit, remove it from staging area
+            if (fileHashInCommit.equals(fileHash)) {
+                staging.remove(fileName);
+            } else {
+                // write the file blob
+                writeContents(join(BLOBS_DIR, fileHash), bytes);
+                staging.put(fileName, fileHash);
+            }
+        }
+        // save the staging area persistently
+        writeObject(STAGING, staging);
+    }
+
+    /**
+     * Delete the file blob in BLOB directory and remove it from the staging area
+     * @param fileName the file name
+     * @param staging the staging area reference
+     */
+    private static void delFileInStaging(String fileName, TreeMap<String, String> staging) {
+        if (staging.containsKey(fileName)) {
+            // delete the old file blob
+            String preFileHash = staging.get(fileName);
+            restrictedDelete(join(BLOBS_DIR, preFileHash));
+            staging.remove(fileName);
+        }
     }
 }
