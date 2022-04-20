@@ -9,7 +9,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date; // TODO: You'll likely use this in this class
+import java.util.Map;
 import java.util.TreeMap;
+
+import static gitlet.Utils.*;
+import static gitlet.Repository.*;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -63,16 +67,26 @@ public class Commit implements Serializable {
     /**
      * This function is for commit with one parent
      */
-    public Commit(String message, TreeMap<String, String> newFileRefs, String parent) {
+    public Commit(String message, String parent) {
         this.date = new Date();
         this.message = message;
-
-        // deal with file references
         this.fileRefs = new TreeMap<>();
-        inheritRefs(parent);
-        this.fileRefs.putAll(newFileRefs);
-
         this.parent = parent;
+
+        inheritRefs();
+        handleStage();
+
+    }
+
+    /**
+     * This function is for commit with two parents
+     */
+    public Commit(String message, String parent, String sParent) {
+        this.date = new Date();
+        this.message = message;
+        //TODO add inherit reference function for two parents
+        this.parent = parent;
+        this.sParent = sParent;
     }
 
     public String getMessage() {
@@ -97,9 +111,11 @@ public class Commit implements Serializable {
 
     /**
      * inherit file references from parent commit
-     * @param parent the hash value of parent commit
      */
-    private void inheritRefs(String parent) {
+    private void inheritRefs() {
+        if (this.fileRefs == null) {
+            throw error("file reference is null");
+        }
         File parentFile = Utils.join(Repository.COMMITS_DIR, parent);
         Commit parentCommit = Utils.readObject(parentFile, Commit.class);
         // if the parent commit is the initial commit (which means that the file reference map is null)
@@ -109,16 +125,21 @@ public class Commit implements Serializable {
         this.fileRefs.putAll(parentCommit.fileRefs);
     }
 
-    /**
-     * This function is for commit with two parents
-     */
-    public Commit(String message, TreeMap<String, String> fileRefs, String parent, String sParent) {
-        this.date = new Date();
-        this.message = message;
-        //TODO add inherit reference function for two parents
-        this.fileRefs = fileRefs;
-        this.parent = parent;
-        this.sParent = sParent;
+    private void handleStage() {
+        TreeMap<String, String> staging = readStaging();
+        if (staging.isEmpty()) {
+            throw error("The staging area is empty, commit failed");
+        }
+        for (Map.Entry<String, String> stagingEntry : staging.entrySet()) {
+            String fileName = stagingEntry.getKey();
+            String fileHash = stagingEntry.getValue();
+            // if the file is to be deleted, remove it from file references
+            if (fileHash == null) {
+                fileRefs.remove(fileName);
+            } else {
+                fileRefs.put(fileName, fileHash);
+            }
+        }
     }
 
     public void makePersistent() {

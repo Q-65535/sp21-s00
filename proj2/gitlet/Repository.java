@@ -7,11 +7,12 @@ import static gitlet.Utils.*;
 
 // TODO: any imports you need here
 
-/** Represents a gitlet repository.
+/**
+ * Represents a gitlet repository.
  *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
  *
- *  @author TODO
+ * @author TODO
  */
 public class Repository {
     /**
@@ -22,9 +23,13 @@ public class Repository {
      * variable is used. We've provided two examples for you.
      */
 
-    /** The current working directory. */
+    /**
+     * The current working directory.
+     */
     public static final File CWD = new File(System.getProperty("user.dir"));
-    /** The .gitlet directory. */
+    /**
+     * The .gitlet directory.
+     */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
 
     /**
@@ -58,7 +63,6 @@ public class Repository {
     public static final File STAGING = join(GITLET_DIR, "staging");
 
 
-    /* TODO: fill in the rest of this class. */
     public static void init() {
         if (GITLET_DIR.exists()) {
             System.out.println("A gitlet version-control system already exists in the current directory.");
@@ -101,25 +105,75 @@ public class Repository {
         HEADS_DIR.mkdir();
     }
 
+    public static void commit(String message) {
+        if (!GITLET_DIR.exists()) {
+            System.out.println("Gitlet has not been initialized!");
+            System.exit(0);
+        }
+        Commit newCommit = new Commit(message, parseHeadToHash());
+        newCommit.makePersistent();
+        String hashText = newCommit.hash();
+        // in detached head state, commit means checkout the new commit
+        if (isDetachedHead()) {
+            checkoutCommit(hashText);
+            // otherwise, update the current branch
+        } else {
+            String curBranchName = getCurBranchName();
+            File curBranchFile = join(HEADS_DIR, curBranchName);
+            writeContents(curBranchFile, hashText);
+        }
+
+        // finally, clear the staging area
+        clearStaging();
+    }
+
+    private static void clearStaging() {
+        writeObject(STAGING, new TreeMap<String, String>());
+    }
+
+    private static String getCurBranchName() {
+        if (isDetachedHead()) {
+            throw error("DETACHED HEAD state, not in any branch!");
+        }
+        String refForm = readContentsAsString(CUR_HEAD);
+        String[] split = refForm.split(" ");
+        String refTag = split[0];
+        String branchName = split[1];
+        return branchName;
+    }
+
+    private static boolean isDetachedHead() {
+        return !isRef(CUR_HEAD);
+    }
+
     /**
      * Check out a commit based on its hash value
+     *
      * @param hashText the hash value of the commit we want to check out
      */
     public static void checkoutCommit(String hashText) {
+        if (!join(COMMITS_DIR, hashText).exists()) {
+            throw error("The commit hash doesn't exist: " + hashText);
+        }
         Utils.writeContents(CUR_HEAD, hashText);
     }
 
     /**
      * Check out a branch reference based on given branch name
+     *
      * @param branchName the given branch name
      */
     public static void checkoutBranch(String branchName) {
+        if (!join(HEADS_DIR, branchName).isFile()) {
+            throw error("no such branch exists: " + branchName);
+        }
         // write the branch name to current head
         Utils.writeContents(CUR_HEAD, "ref: ", branchName);
     }
 
     /**
      * Create a branch from current HEAD based on given branch name
+     *
      * @param BranchName The name of the branch to be created
      */
     public static void createBranch(String BranchName) {
@@ -138,6 +192,7 @@ public class Repository {
 
     /**
      * Read the file to commit hash value
+     *
      * @param head The file to be read
      * @return The hash value of the commit this head points to
      */
@@ -152,6 +207,7 @@ public class Repository {
 
     /**
      * check if a file contains branch reference information
+     *
      * @param head the file to be checked
      * @return true if it is a branch reference
      */
@@ -171,7 +227,7 @@ public class Repository {
         TreeMap<String, String> fileRefs = curCommit.getFileRefs();
 
         // get staging area
-        TreeMap<String, String> staging = readObject(STAGING, TreeMap.class);
+        TreeMap<String, String> staging = readStaging();
 
         // deal with the case where the file does not exist
         if (!join(CWD, fileName).isFile()) {
@@ -207,20 +263,35 @@ public class Repository {
             }
         }
         // save the staging area persistently
+        writeStaging(staging);
+    }
+
+    /**
+     * Read the staging area
+     *
+     * @return The TreeMap representing the staging area
+     */
+    public static TreeMap<String, String> readStaging() {
+        return readObject(STAGING, TreeMap.class);
+    }
+
+    /**
+     * Write a TreeMap object representing the staging area to STAGING persistently
+     *
+     * @param staging The TreeMap object representing the staging area
+     */
+    public static void writeStaging(TreeMap<String, String> staging) {
         writeObject(STAGING, staging);
     }
 
     /**
-     * Delete the file blob in BLOB directory and remove it from the staging area
-     * @param fileName the file name
-     * @param staging the staging area reference
+     * Get current head commit object from head
+     *
+     * @return The current head commit object
      */
-    private static void delFileInStaging(String fileName, TreeMap<String, String> staging) {
-        if (staging.containsKey(fileName)) {
-            // delete the old file blob
-            String preFileHash = staging.get(fileName);
-            restrictedDelete(join(BLOBS_DIR, preFileHash));
-            staging.remove(fileName);
-        }
+    public static Commit getHeadCommit() {
+        String commitFileName = parseHeadToHash();
+        File commitFile = join(COMMITS_DIR, commitFileName);
+        return readObject(commitFile, Commit.class);
     }
 }

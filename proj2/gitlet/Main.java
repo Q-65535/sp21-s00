@@ -1,8 +1,9 @@
 package gitlet;
 import static gitlet.Repository.*;
+import static gitlet.Utils.*;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author TODO
+ *  @author wudi
  */
 public class Main {
 
@@ -10,20 +11,35 @@ public class Main {
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) {
-        // TODO: what if args is empty?
+        if (args.length==0) {
+            System.out.println("Empty argument!");
+            System.exit(0);
+        }
         String firstArg = args[0];
         switch(firstArg) {
             case "init":
                 init();
                 break;
             case "add":
-                if (args.length != 2) {
-                    throw new GitletException("specify the file to be added");
+                if (!argsLenEqualCheck(args, 2)) {
+                    throw error("Please specify one file");
                 }
                 String fileName = args[1];
                 addFile(fileName);
                 break;
-            // TODO: FILL THE REST IN
+            case "commit":
+                if (!argsLenEqualCheck(args, 2)) {
+                    throw error("please specify one commit message!");
+                }
+                String message = args[1];
+                commit(message);
+                System.out.println("commit successfully!");
         }
     }
+
+    private static boolean argsLenEqualCheck(String[] args, int expectLen) {
+        return args.length == expectLen;
+    }
+
+
 }
