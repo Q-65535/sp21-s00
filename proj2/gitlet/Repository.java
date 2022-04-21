@@ -133,7 +133,7 @@ public class Repository {
 
     private static String getCurBranchName() {
         if (isDetachedHead()) {
-            throw error("DETACHED HEAD state, not in any branch!");
+            throw error("DETACHED HEAD state, not on any branch!");
         }
         String refForm = readContentsAsString(CUR_HEAD);
         String[] split = refForm.split(" ");
@@ -271,7 +271,7 @@ public class Repository {
      *
      * @return The TreeMap representing the staging area
      */
-    public static TreeMap<String, String> readStaging() {
+     static TreeMap<String, String> readStaging() {
         return readObject(STAGING, TreeMap.class);
     }
 
