@@ -1,12 +1,12 @@
 package gitlet;
 
-// TODO: any imports you need here
 
 import java.io.File;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date; // TODO: You'll likely use this in this class
 import java.util.Map;
@@ -15,11 +15,12 @@ import java.util.TreeMap;
 import static gitlet.Utils.*;
 import static gitlet.Repository.*;
 
-/** Represents a gitlet commit object.
+/**
+ * Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
  *
- *  @author TODO
+ * @author TODO
  */
 public class Commit implements Serializable {
     /**
@@ -30,7 +31,9 @@ public class Commit implements Serializable {
      * variable is used. We've provided one example for `message`.
      */
 
-    /** The message of this Commit. */
+    /**
+     * The message of this Commit.
+     */
     private String message;
 
     /**
@@ -58,10 +61,19 @@ public class Commit implements Serializable {
     /**
      * This function is for initial commit
      */
-    public Commit(String message) {
-        this.date = new Date();
+    private Commit(String message) {
+        this.date = new Date(0);
         fileRefs = new TreeMap<>();
         this.message = message;
+    }
+
+    /**
+     * Only for initial commit
+     *
+     * @return the initial commit
+     */
+    public static Commit initialCommit() {
+        return new Commit("initial commit");
     }
 
     /**
@@ -95,6 +107,14 @@ public class Commit implements Serializable {
 
     public Date getDate() {
         return date;
+    }
+
+    /**
+     * @return the string representation of this commit's date
+     */
+    public String getDateStr() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        return sdf.format(date);
     }
 
     public TreeMap<String, String> getFileRefs() {
@@ -152,5 +172,25 @@ public class Commit implements Serializable {
      */
     public String hash() {
         return Utils.sha1(Utils.serialize(this));
+    }
+
+    public String commitInfoStr() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("===").append("\n");
+        // hash info
+        sb.append("commit ").append(hash()).append("\n");
+        //  date info
+        sb.append("Date: ").append(getDateStr()).append("\n");
+        // message info
+        sb.append(message).append("\n").append("\n");
+        return sb.toString();
+    }
+
+    public boolean hasParent() {
+        return parent != null;
+    }
+
+    public Commit getParentCommit() {
+        return readHashToCommit(parent);
     }
 }

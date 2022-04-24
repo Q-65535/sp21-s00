@@ -42,6 +42,13 @@ public class Main {
                 String message = args[1];
                 commit(message);
                 System.out.println("commit successfully!");
+                break;
+            case "log":
+                if (!argsLenEqualCheck(args, 1)) {
+                    exitWithMessage("no argument needed");
+                }
+                System.out.println(log());
+                break;
         }
     }
 

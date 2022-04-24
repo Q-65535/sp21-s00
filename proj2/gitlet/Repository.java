@@ -71,17 +71,15 @@ public class Repository {
             initDirs();
             initStaging();
             // create initial commit
-            Commit initial_commit = new Commit("initial commit");
+            Commit initial_commit = Commit.initialCommit();
             initial_commit.makePersistent();
             String hashText = initial_commit.hash();
 
             checkoutCommit(hashText);
             // initialize the master branch
             createBranch(masterBranchName);
-
             // set current head to current branch reference
             checkoutBranch(masterBranchName);
-
             System.out.println("gitlet initialization success!");
         }
     }
@@ -144,6 +142,14 @@ public class Repository {
 
     private static boolean isDetachedHead() {
         return !isRef(CUR_HEAD);
+    }
+
+    public static Commit readHashToCommit(String hashText) {
+        File commitFile = join(COMMITS_DIR, hashText);
+        if (!commitFile.exists()) {
+            error("the commit hash does not exist: " + hashText);
+        }
+        return readObject(commitFile, Commit.class);
     }
 
     /**
@@ -293,5 +299,38 @@ public class Repository {
         String commitFileName = parseHeadToHash();
         File commitFile = join(COMMITS_DIR, commitFileName);
         return readObject(commitFile, Commit.class);
+    }
+
+    public static void remove(String fileName) {
+        Commit headCommit = getHeadCommit();
+        TreeMap<String, String> staging = readStaging();
+        // if the file is tracked in current commit
+        if (headCommit.getFileRefs().containsKey(fileName)) {
+            // map the file name to null to indicate deletion
+            staging.put(fileName, null);
+            // delete the file in current directory
+            restrictedDelete(join(CWD, fileName));
+        } else {
+            // if the file is not in commit and staging area, error
+            if (!staging.containsKey(fileName)) {
+                error("No reason to remove the file.");
+            }
+            staging.remove(fileName);
+        }
+
+        // finally persist staging area
+        writeStaging(staging);
+    }
+
+    public static String log() {
+        StringBuilder res = new StringBuilder();
+        Commit headCommit = getHeadCommit();
+        Commit curCommit = headCommit;
+        res.append(curCommit.commitInfoStr());
+        while (curCommit.hasParent()) {
+            curCommit = curCommit.getParentCommit();
+            res.append(curCommit.commitInfoStr());
+        }
+        return res.toString();
     }
 }
