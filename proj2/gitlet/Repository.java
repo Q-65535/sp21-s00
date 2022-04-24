@@ -1,6 +1,8 @@
 package gitlet;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 
 import static gitlet.Utils.*;
@@ -147,7 +149,7 @@ public class Repository {
     public static Commit readHashToCommit(String hashText) {
         File commitFile = join(COMMITS_DIR, hashText);
         if (!commitFile.exists()) {
-            error("the commit hash does not exist: " + hashText);
+            throw error("the commit hash does not exist: " + hashText);
         }
         return readObject(commitFile, Commit.class);
     }
@@ -277,7 +279,7 @@ public class Repository {
      *
      * @return The TreeMap representing the staging area
      */
-     static TreeMap<String, String> readStaging() {
+    static TreeMap<String, String> readStaging() {
         return readObject(STAGING, TreeMap.class);
     }
 
@@ -313,7 +315,7 @@ public class Repository {
         } else {
             // if the file is not in commit and staging area, error
             if (!staging.containsKey(fileName)) {
-                error("No reason to remove the file.");
+                throw error("No reason to remove the file.");
             }
             staging.remove(fileName);
         }
@@ -332,5 +334,46 @@ public class Repository {
             res.append(curCommit.commitInfoStr());
         }
         return res.toString();
+    }
+
+    public static String globalLog() {
+        StringBuilder sb = new StringBuilder();
+        List<Commit> commitList = getAllCommits();
+        for (Commit commit : commitList) {
+            sb.append(commit.commitInfoStr());
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Given a commit message, find all its corresponding commit hash
+     */
+    public static String find(String message) {
+        StringBuilder res = new StringBuilder();
+        List<Commit> commitList = getAllCommits();
+        for (Commit commit : commitList) {
+            if (message.equals(commit.getMessage())) {
+                res.append(commit.hash()).append("\n");
+            }
+        }
+        // if no message matches, error
+        if (res.length() == 0) {
+            throw error("Found no commit with that message.");
+        }
+        return res.toString();
+    }
+
+    /**
+     * Get all commits object in the .gitlet
+     *
+     * @return
+     */
+    private static List<Commit> getAllCommits() {
+        ArrayList<Commit> res = new ArrayList<>();
+        List<String> commitHashList = plainFilenamesIn(COMMITS_DIR);
+        for (String commitHash : commitHashList) {
+            res.add(readHashToCommit(commitHash));
+        }
+        return res;
     }
 }

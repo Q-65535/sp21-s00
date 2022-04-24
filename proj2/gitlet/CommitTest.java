@@ -19,4 +19,10 @@ public class CommitTest {
         Commit commit = Commit.initialCommit();
         System.out.println(commit.commitInfoStr());
     }
+
+    @Test
+    public void testGlobalLog() {
+        StringBuilder sb = new StringBuilder();
+        System.out.println(sb.length());
+    }
 }

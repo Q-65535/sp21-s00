@@ -49,6 +49,17 @@ public class Main {
                 }
                 System.out.println(log());
                 break;
+            case "global-log":
+                if (!argsLenEqualCheck(args, 1)) {
+                    exitWithMessage("no argument needed");
+                }
+                System.out.println(globalLog());
+                break;
+            case "find":
+                if (!argsLenEqualCheck(args, 2)) {
+                    exitWithMessage("Please specify a message");
+                }
+                System.out.println(find(args[1]));
         }
     }
 
