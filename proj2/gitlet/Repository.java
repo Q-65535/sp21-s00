@@ -1,9 +1,7 @@
 package gitlet;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -84,7 +82,9 @@ public class Repository {
             checkoutBranch(masterBranchName);
             System.out.println("gitlet initialization success!");
         }
+
     }
+
 
     /**
      * Initialize the staging area. The staging area is a map that maps file name
@@ -364,7 +364,7 @@ public class Repository {
     }
 
     /**
-     * Get all commits object in the .gitlet
+     * Get all commits object in the commit directory
      *
      * @return
      */
@@ -376,4 +376,141 @@ public class Repository {
         }
         return res;
     }
+
+    public static String status() {
+        StringBuilder res = new StringBuilder();
+        res.append(getBranchStatus()).append("\n");
+        res.append(getNonRemoveStagingStatus()).append("\n");
+        res.append(getREmoveStagingStatus()).append("\n");
+        res.append(getModifiedStatus()).append("\n");
+        res.append(getUncheckedFiles()).append("\n");
+        return res.toString();
+    }
+
+    private static String getUncheckedFiles() {
+        StringBuilder res = new StringBuilder();
+        res.append("=== Untracked Files ===").append("\n");
+        List<String> CWDFileNames = plainFilenamesIn(CWD);
+        for (String fileName : CWDFileNames) {
+            TreeMap<String, String> fileRefs = getHeadCommit().getFileRefs();
+            if (!readStaging().containsKey(fileName) && !fileRefs.containsKey(fileName)) {
+                res.append(fileName).append("\n");
+            } else if (fileRefs.containsKey(fileName) && fileRefs.get(fileName) == null) {
+                res.append(fileName).append("\n");
+            }
+        }
+        return res.toString();
+    }
+
+    private static String getREmoveStagingStatus() {
+        StringBuilder res = new StringBuilder();
+        res.append("=== Removed Files ===").append("\n");
+        for (Map.Entry<String, String> entry : readStaging().entrySet()) {
+            if (entry.getValue() == null) {
+                res.append(entry.getKey()).append("\n");
+            }
+        }
+        return res.toString();
+    }
+
+    private static String getModifiedStatus() {
+        List<String> modifiedFileNames = new ArrayList<>();
+        // case1: tracked in current commit but not staged
+        // get all the files in current commit but not in staging area
+        // put commit file names into a set
+        Set<String> commitFileNames = new HashSet<>();
+        for (Map.Entry<String, String> entry : getHeadCommit().getFileRefs().entrySet()) {
+            commitFileNames.add(entry.getKey());
+        }
+        // filter all file names in the staging area
+        for (Map.Entry<String, String> entry : readStaging().entrySet()) {
+            commitFileNames.remove(entry.getKey());
+        }
+        // get all file names in current working directory
+        List<String> CWDFileNameList = plainFilenamesIn(CWD);
+        Set<String> CWDFileNames = new HashSet<>();
+        for (String s : CWDFileNameList) {
+            CWDFileNames.add(s);
+        }
+
+        for (String fileName : commitFileNames) {
+            String blobHash = getHeadCommit().getFileRefs().get(fileName);
+            // if the file is not in current directory and is not staged
+            if (!CWDFileNames.contains(fileName)) {
+                modifiedFileNames.add(fileName + " (deleted)");
+                // if the file is modified in current directory and is not staged
+            } else if (!blobHash.equals(getFileHash(join(CWD, fileName)))) {
+                modifiedFileNames.add(fileName + " (modified)");
+            }
+        }
+
+
+        // case2: files are sataged
+        for (Map.Entry<String, String> entry : readStaging().entrySet()) {
+            String fileName = entry.getKey();
+            // if the file is staged for adding
+            if (entry.getValue() != null) {
+                String blobHash = entry.getValue();
+                // if current directory doesn't contain the stage-for-adding file
+                if (!CWDFileNames.contains(fileName)) {
+                    modifiedFileNames.add(fileName + " (deleted)");
+                    // if current directory contains the file but the file is modfied
+                } else if (!blobHash.equals(getFileHash(join(CWD, fileName)))) {
+                    modifiedFileNames.add(fileName + " (modified)");
+                }
+            }
+        }
+        // build the result string
+        StringBuilder res = new StringBuilder();
+        res.append("=== Modifications Not Staged For Commit ===").append("\n");
+        Collections.sort(modifiedFileNames);
+        for (String modifiedFileName : modifiedFileNames) {
+            res.append(modifiedFileName).append("\n");
+        }
+        return res.toString();
+    }
+
+    private static String getFileHash(File file) {
+        return sha1(readContents(file));
+    }
+
+    public static String getNonRemoveStagingStatus() {
+        StringBuilder res = new StringBuilder();
+        res.append("=== Staged Files ===").append("\n");
+        TreeMap<String, String> staging = readStaging();
+        // iterate through all mappings in the staging area
+        for (Map.Entry<String, String> entry : staging.entrySet()) {
+            // if the file name doesn't point to null, it's staged
+            if (entry.getValue() != null) {
+                res.append(entry.getKey()).append("\n");
+            }
+        }
+        return res.toString();
+    }
+
+    public static String getBranchStatus() {
+        StringBuilder res = new StringBuilder();
+        String curBranchName = getCurBranchName();
+        // get all branch names in sorted order
+        List<String> branchNames = getAllBranchNames();
+        Collections.sort(branchNames);
+        for (int i = 0; i < branchNames.size(); i++) {
+            // find the branch name that matches current branch, then mark it
+            if (branchNames.get(i).equals(curBranchName)) {
+                branchNames.set(i, "*" + curBranchName);
+                break;
+            }
+        }
+        res.append("=== Branches ===").append("\n");
+        for (String branchName : branchNames) {
+            res.append(branchName).append("\n");
+        }
+        return res.toString();
+    }
+
+    private static List<String> getAllBranchNames() {
+        List<String> heads = plainFilenamesIn(HEADS_DIR);
+        return heads;
+    }
 }
+

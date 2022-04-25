@@ -60,6 +60,12 @@ public class Main {
                     exitWithMessage("Please specify a message");
                 }
                 System.out.println(find(args[1]));
+                break;
+            case "status":
+                if (!argsLenEqualCheck(args, 1)) {
+                    exitWithMessage("no argument needed");
+                }
+                System.out.println(status());
         }
     }
 

@@ -5,6 +5,8 @@ import org.junit.Test;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static gitlet.Repository.*;
+
 public class CommitTest {
     @Test
     public void testDate() {
@@ -24,5 +26,13 @@ public class CommitTest {
     public void testGlobalLog() {
         StringBuilder sb = new StringBuilder();
         System.out.println(sb.length());
+    }
+    @Test
+    public void testGetBranchStatus() {
+        System.out.println(getBranchStatus());
+    }
+    @Test
+    public void testGetStaging() {
+        System.out.println(status());
     }
 }
