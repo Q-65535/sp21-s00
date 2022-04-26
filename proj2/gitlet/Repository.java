@@ -12,7 +12,7 @@ import static gitlet.Utils.*;
  *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
  *
- * @author TODO
+ * @author Di Wu
  */
 public class Repository {
     /**
@@ -62,6 +62,37 @@ public class Repository {
      */
     public static final File STAGING = join(GITLET_DIR, "staging");
 
+    private static String getCurBranchName() {
+        if (isDetachedHead()) {
+            throw error("DETACHED HEAD state, not on any branch!");
+        }
+        String refForm = readContentsAsString(CUR_HEAD);
+        String[] split = refForm.split(" ");
+        String refTag = split[0];
+        String branchName = split[1];
+        return branchName;
+    }
+
+    /**
+     * Get current head commit object from head
+     *
+     * @return The current head commit object
+     */
+    public static Commit getHeadCommit() {
+        String commitFileName = getHeadHash();
+        File commitFile = join(COMMITS_DIR, commitFileName);
+        return readObject(commitFile, Commit.class);
+    }
+
+
+    /**
+     * Read the staging area
+     *
+     * @return The TreeMap representing the staging area
+     */
+    static TreeMap<String, String> getStaging() {
+        return readObject(STAGING, TreeMap.class);
+    }
 
     public static void init() {
         if (GITLET_DIR.exists()) {
@@ -75,11 +106,11 @@ public class Repository {
             initial_commit.makePersistent();
             String hashText = initial_commit.hash();
 
-            checkoutCommit(hashText);
+            headCheckoutCommit(hashText);
             // initialize the master branch
             createBranch(masterBranchName);
             // set current head to current branch reference
-            checkoutBranch(masterBranchName);
+            headCheckoutBranch(masterBranchName);
             System.out.println("gitlet initialization success!");
         }
 
@@ -110,12 +141,12 @@ public class Repository {
             System.out.println("Gitlet has not been initialized!");
             System.exit(0);
         }
-        Commit newCommit = new Commit(message, parseHeadToHash());
+        Commit newCommit = new Commit(message, getHeadHash());
         newCommit.makePersistent();
         String hashText = newCommit.hash();
         // in detached head state, commit means checkout the new commit
         if (isDetachedHead()) {
-            checkoutCommit(hashText);
+            headCheckoutCommit(hashText);
             // otherwise, update the current branch
         } else {
             String curBranchName = getCurBranchName();
@@ -131,22 +162,13 @@ public class Repository {
         writeObject(STAGING, new TreeMap<String, String>());
     }
 
-    private static String getCurBranchName() {
-        if (isDetachedHead()) {
-            throw error("DETACHED HEAD state, not on any branch!");
-        }
-        String refForm = readContentsAsString(CUR_HEAD);
-        String[] split = refForm.split(" ");
-        String refTag = split[0];
-        String branchName = split[1];
-        return branchName;
-    }
+
 
     private static boolean isDetachedHead() {
         return !isRef(CUR_HEAD);
     }
 
-    public static Commit readHashToCommit(String hashText) {
+    public static Commit getCommitFromHash(String hashText) {
         File commitFile = join(COMMITS_DIR, hashText);
         if (!commitFile.exists()) {
             throw error("the commit hash does not exist: " + hashText);
@@ -155,11 +177,11 @@ public class Repository {
     }
 
     /**
-     * Check out a commit based on its hash value
+     * Check out a commit based on its hash value (only move head, files don't change)
      *
      * @param hashText the hash value of the commit we want to check out
      */
-    public static void checkoutCommit(String hashText) {
+    public static void headCheckoutCommit(String hashText) {
         if (!join(COMMITS_DIR, hashText).exists()) {
             throw error("The commit hash doesn't exist: " + hashText);
         }
@@ -167,11 +189,11 @@ public class Repository {
     }
 
     /**
-     * Check out a branch reference based on given branch name
+     * Check out a branch reference based on given branch name (only move head, files don't change)
      *
      * @param branchName the given branch name
      */
-    public static void checkoutBranch(String branchName) {
+    public static void headCheckoutBranch(String branchName) {
         if (!join(HEADS_DIR, branchName).isFile()) {
             throw error("no such branch exists: " + branchName);
         }
@@ -186,11 +208,11 @@ public class Repository {
      */
     public static void createBranch(String BranchName) {
         File branchFile = join(HEADS_DIR, BranchName);
-        String headCommitHash = parseHeadToHash();
+        String headCommitHash = getHeadHash();
         Utils.writeContents(branchFile, headCommitHash);
     }
 
-    private static String parseHeadToHash() {
+    public static String getHeadHash() {
         if (isRef(CUR_HEAD)) {
             return readRefToHash(CUR_HEAD);
         } else {
@@ -230,12 +252,12 @@ public class Repository {
 
     public static void addFile(String fileName) {
         // get file reference of current commit
-        File curCommitFile = join(COMMITS_DIR, parseHeadToHash());
+        File curCommitFile = join(COMMITS_DIR, getHeadHash());
         Commit curCommit = readObject(curCommitFile, Commit.class);
         TreeMap<String, String> fileRefs = curCommit.getFileRefs();
 
         // get staging area
-        TreeMap<String, String> staging = readStaging();
+        TreeMap<String, String> staging = getStaging();
 
         // deal with the case where the file does not exist
         if (!join(CWD, fileName).isFile()) {
@@ -274,14 +296,6 @@ public class Repository {
         writeStaging(staging);
     }
 
-    /**
-     * Read the staging area
-     *
-     * @return The TreeMap representing the staging area
-     */
-    static TreeMap<String, String> readStaging() {
-        return readObject(STAGING, TreeMap.class);
-    }
 
     /**
      * Write a TreeMap object representing the staging area to STAGING persistently
@@ -292,20 +306,10 @@ public class Repository {
         writeObject(STAGING, staging);
     }
 
-    /**
-     * Get current head commit object from head
-     *
-     * @return The current head commit object
-     */
-    public static Commit getHeadCommit() {
-        String commitFileName = parseHeadToHash();
-        File commitFile = join(COMMITS_DIR, commitFileName);
-        return readObject(commitFile, Commit.class);
-    }
 
-    public static void remove(String fileName) {
+    public static void removeFile(String fileName) {
         Commit headCommit = getHeadCommit();
-        TreeMap<String, String> staging = readStaging();
+        TreeMap<String, String> staging = getStaging();
         // if the file is tracked in current commit
         if (headCommit.getFileRefs().containsKey(fileName)) {
             // map the file name to null to indicate deletion
@@ -313,14 +317,15 @@ public class Repository {
             // delete the file in current directory
             restrictedDelete(join(CWD, fileName));
         } else {
-            // if the file is not in commit and staging area, error
+            // if the file is neither in commit nor in staging area, error
             if (!staging.containsKey(fileName)) {
                 throw error("No reason to remove the file.");
             }
+            // otherwise, remove it from staging area
             staging.remove(fileName);
         }
 
-        // finally persist staging area
+        // finally, persist staging area
         writeStaging(staging);
     }
 
@@ -372,7 +377,7 @@ public class Repository {
         ArrayList<Commit> res = new ArrayList<>();
         List<String> commitHashList = plainFilenamesIn(COMMITS_DIR);
         for (String commitHash : commitHashList) {
-            res.add(readHashToCommit(commitHash));
+            res.add(getCommitFromHash(commitHash));
         }
         return res;
     }
@@ -383,29 +388,37 @@ public class Repository {
         res.append(getNonRemoveStagingStatus()).append("\n");
         res.append(getREmoveStagingStatus()).append("\n");
         res.append(getModifiedStatus()).append("\n");
-        res.append(getUncheckedFiles()).append("\n");
+        res.append(getUncheckedFilesStr()).append("\n");
         return res.toString();
     }
 
-    private static String getUncheckedFiles() {
+    private static String getUncheckedFilesStr() {
         StringBuilder res = new StringBuilder();
         res.append("=== Untracked Files ===").append("\n");
+        for (String fileName : getUntrackedFileNamesList()) {
+            res.append(fileName).append("\n");
+        }
+        return res.toString();
+    }
+
+    private static List<String> getUntrackedFileNamesList() {
+        List<String> res = new ArrayList<>();
         List<String> CWDFileNames = plainFilenamesIn(CWD);
         for (String fileName : CWDFileNames) {
             TreeMap<String, String> fileRefs = getHeadCommit().getFileRefs();
-            if (!readStaging().containsKey(fileName) && !fileRefs.containsKey(fileName)) {
-                res.append(fileName).append("\n");
+            if (!getStaging().containsKey(fileName) && !fileRefs.containsKey(fileName)) {
+                res.add(fileName);
             } else if (fileRefs.containsKey(fileName) && fileRefs.get(fileName) == null) {
-                res.append(fileName).append("\n");
+                res.add(fileName);
             }
         }
-        return res.toString();
+        return res;
     }
 
     private static String getREmoveStagingStatus() {
         StringBuilder res = new StringBuilder();
         res.append("=== Removed Files ===").append("\n");
-        for (Map.Entry<String, String> entry : readStaging().entrySet()) {
+        for (Map.Entry<String, String> entry : getStaging().entrySet()) {
             if (entry.getValue() == null) {
                 res.append(entry.getKey()).append("\n");
             }
@@ -423,7 +436,7 @@ public class Repository {
             commitFileNames.add(entry.getKey());
         }
         // filter all file names in the staging area
-        for (Map.Entry<String, String> entry : readStaging().entrySet()) {
+        for (Map.Entry<String, String> entry : getStaging().entrySet()) {
             commitFileNames.remove(entry.getKey());
         }
         // get all file names in current working directory
@@ -446,7 +459,7 @@ public class Repository {
 
 
         // case2: files are sataged
-        for (Map.Entry<String, String> entry : readStaging().entrySet()) {
+        for (Map.Entry<String, String> entry : getStaging().entrySet()) {
             String fileName = entry.getKey();
             // if the file is staged for adding
             if (entry.getValue() != null) {
@@ -477,7 +490,7 @@ public class Repository {
     public static String getNonRemoveStagingStatus() {
         StringBuilder res = new StringBuilder();
         res.append("=== Staged Files ===").append("\n");
-        TreeMap<String, String> staging = readStaging();
+        TreeMap<String, String> staging = getStaging();
         // iterate through all mappings in the staging area
         for (Map.Entry<String, String> entry : staging.entrySet()) {
             // if the file name doesn't point to null, it's staged
@@ -511,6 +524,70 @@ public class Repository {
     private static List<String> getAllBranchNames() {
         List<String> heads = plainFilenamesIn(HEADS_DIR);
         return heads;
+    }
+
+    public static void checkoutCommitFile(String commitHash, String fileName) {
+        if (!commitExists(commitHash)) {
+            throw error("No commit with that id exists.");
+        }
+        Commit commit = getCommitFromHash(commitHash);
+        if (!fileExistsInCommit(commit, fileName)) {
+            throw error("File does not exist in that commit.");
+        }
+        byte[] fileContent = commit.readFileContent(fileName);
+        writeContents(join(CWD, fileName), fileContent);
+    }
+
+    public static void checkoutCommitFile(Commit commit, String fileName) {
+        checkoutCommitFile(commit.hash(), fileName);
+    }
+
+    private static boolean fileExistsInCommit(Commit commit, String fileName) {
+        return commit.getFileRefs().containsKey(fileName);
+    }
+
+    private static boolean commitExists(String commitHash) {
+        return join(COMMITS_DIR, commitHash).exists();
+    }
+
+    public static void checkoutBranch(String branchName) {
+        if (!branchExists(branchName)) {
+            throw error("No such branch exists.");
+        }
+        if (!isDetachedHead() && branchName.equals(getCurBranchName())) {
+            throw error("No need to checkout the current branch.");
+        }
+        if (!getUntrackedFileNamesList().isEmpty()) {
+            throw error("There is an untracked file in the way; delete it, or add and commit it first.");
+        }
+        // the commit that the check-out branch points to
+        Commit commit = getCommitFromBranchName(branchName);
+        // delete all plain files in the working directory
+        List<String> fileNames = plainFilenamesIn(CWD);
+        for (String fileName : fileNames) {
+            restrictedDelete(join(CWD, fileName));
+        }
+        // check out and clear staging area
+        checkoutAllCommitFiles(commit);
+        headCheckoutBranch(branchName);
+        clearStaging();
+    }
+
+    private static void checkoutAllCommitFiles(Commit commit) {
+        for (Map.Entry<String, String> entry : commit.getFileRefs().entrySet()) {
+            checkoutCommitFile(commit.hash(), entry.getKey());
+        }
+    }
+
+    private static Commit getCommitFromBranchName(String branchName) {
+        File branchFile = join(HEADS_DIR, branchName);
+        String commitHash = readContentsAsString(branchFile);
+        Commit commit = getCommitFromHash(commitHash);
+        return commit;
+    }
+
+    private static boolean branchExists(String branchName) {
+        return join(HEADS_DIR, branchName).exists();
     }
 }
 

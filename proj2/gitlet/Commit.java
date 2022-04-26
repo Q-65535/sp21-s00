@@ -3,11 +3,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date; // TODO: You'll likely use this in this class
 import java.util.Map;
 import java.util.TreeMap;
@@ -20,7 +16,7 @@ import static gitlet.Repository.*;
  *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
  *
- * @author TODO
+ * @author Di Wu
  */
 public class Commit implements Serializable {
     /**
@@ -146,7 +142,7 @@ public class Commit implements Serializable {
     }
 
     private void handleStage() {
-        TreeMap<String, String> staging = readStaging();
+        TreeMap<String, String> staging = getStaging();
         if (staging.isEmpty()) {
             throw error("The staging area is empty, commit failed");
         }
@@ -186,11 +182,21 @@ public class Commit implements Serializable {
         return sb.toString();
     }
 
+public byte[] readFileContent(String fileName) {
+        if (!fileRefs.containsKey(fileName)) {
+//            throw error("File does not exist in that commit.");
+            throw error("The file " + "\" " + fileName + "\"" + " doesn't exist in the commit: " + hash());
+        }
+        String blobHash = fileRefs.get(fileName);
+        File blobFile = join(BLOBS_DIR, blobHash);
+        return readContents(blobFile);
+    }
+
     public boolean hasParent() {
         return parent != null;
     }
 
     public Commit getParentCommit() {
-        return readHashToCommit(parent);
+        return getCommitFromHash(parent);
     }
 }
