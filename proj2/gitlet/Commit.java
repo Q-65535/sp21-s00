@@ -52,7 +52,10 @@ public class Commit implements Serializable {
      */
     private String sParent;
 
-    /* TODO: fill in the rest of this class. */
+    /**
+     * the SHA-1 hash value of this commit
+     */
+    private String commitHash;
 
     /**
      * This function is for initial commit
@@ -167,7 +170,10 @@ public class Commit implements Serializable {
      * get the string representation of SHA-1 hash value of this commit
      */
     public String hash() {
-        return Utils.sha1(Utils.serialize(this));
+        if (commitHash == null) {
+            commitHash = sha1(serialize(this));
+        }
+        return commitHash;
     }
 
     public String commitInfoStr() {

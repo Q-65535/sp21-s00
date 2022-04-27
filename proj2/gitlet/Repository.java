@@ -111,7 +111,6 @@ public class Repository {
             createBranch(masterBranchName);
             // set current head to current branch reference
             headCheckoutBranch(masterBranchName);
-            System.out.println("gitlet initialization success!");
         }
 
     }
@@ -161,7 +160,6 @@ public class Repository {
     private static void clearStaging() {
         writeObject(STAGING, new TreeMap<String, String>());
     }
-
 
 
     private static boolean isDetachedHead() {
@@ -386,7 +384,7 @@ public class Repository {
         StringBuilder res = new StringBuilder();
         res.append(getBranchStatus()).append("\n");
         res.append(getNonRemoveStagingStatus()).append("\n");
-        res.append(getREmoveStagingStatus()).append("\n");
+        res.append(getRemoveStagingStatus()).append("\n");
         res.append(getModifiedStatus()).append("\n");
         res.append(getUncheckedFilesStr()).append("\n");
         return res.toString();
@@ -404,26 +402,39 @@ public class Repository {
     private static List<String> getUntrackedFileNamesList() {
         List<String> res = new ArrayList<>();
         List<String> CWDFileNames = plainFilenamesIn(CWD);
+        // loop through all EXISTING files in CWD (only existing file can be in untracked state)
         for (String fileName : CWDFileNames) {
             TreeMap<String, String> fileRefs = getHeadCommit().getFileRefs();
             if (!getStaging().containsKey(fileName) && !fileRefs.containsKey(fileName)) {
                 res.add(fileName);
-            } else if (fileRefs.containsKey(fileName) && fileRefs.get(fileName) == null) {
+                // if the file is tracked in current commit, but it's staged for removal, Gitlet doesn't aware it's backed to the CWD
+            } else if (fileRefs.containsKey(fileName) && getStaging().containsKey(fileName) && getStaging().get(fileName) == null) {
                 res.add(fileName);
             }
         }
         return res;
     }
 
-    private static String getREmoveStagingStatus() {
+    private static String getRemoveStagingStatus() {
         StringBuilder res = new StringBuilder();
         res.append("=== Removed Files ===").append("\n");
         for (Map.Entry<String, String> entry : getStaging().entrySet()) {
-            if (entry.getValue() == null) {
-                res.append(entry.getKey()).append("\n");
+            String fileName = entry.getKey();
+            if (entry.getValue() == null && !isFileInCWD(fileName)) {
+                res.append(fileName).append("\n");
             }
         }
         return res.toString();
+    }
+
+    /**
+     * Evaluate whether a file is in CWD directory
+     *
+     * @param fileName
+     * @return
+     */
+    private static boolean isFileInCWD(String fileName) {
+        return join(CWD, fileName).exists();
     }
 
     private static String getModifiedStatus() {

@@ -48,13 +48,12 @@ public class Main {
                 }
                 String message = args[1];
                 commit(message);
-                System.out.println("commit successfully!");
                 break;
             case "log":
                 if (!argsLenEqualCheck(args, 1)) {
                     exitWithMessage("no argument needed");
                 }
-                System.out.println(log());
+                System.out.print(log());
                 break;
             case "global-log":
                 if (!argsLenEqualCheck(args, 1)) {
@@ -72,7 +71,7 @@ public class Main {
                 if (!argsLenEqualCheck(args, 1)) {
                     exitWithMessage("no argument needed");
                 }
-                System.out.println(status());
+                System.out.print(status());
                 break;
             case "checkout":
                 if (!argsLenRangeCheck(args, 2, 4)) {
