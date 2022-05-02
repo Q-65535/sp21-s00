@@ -4,7 +4,7 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Date; // TODO: You'll likely use this in this class
+import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -85,7 +85,7 @@ public class Commit implements Serializable {
         this.parent = parent;
 
         inheritRefs();
-        handleStage();
+        fetchStaging();
 
     }
 
@@ -112,8 +112,7 @@ public class Commit implements Serializable {
      * @return the string representation of this commit's date
      */
     public String getDateStr() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        return sdf.format(date);
+        return new SimpleDateFormat("E MMM dd HH:mm:ss yyyy").format(date) + " +0630";
     }
 
     public TreeMap<String, String> getFileRefs() {
@@ -144,7 +143,7 @@ public class Commit implements Serializable {
         this.fileRefs.putAll(parentCommit.fileRefs);
     }
 
-    private void handleStage() {
+    private void fetchStaging() {
         TreeMap<String, String> staging = getStaging();
         if (staging.isEmpty()) {
             throw error("The staging area is empty, commit failed");
@@ -176,6 +175,15 @@ public class Commit implements Serializable {
         return commitHash;
     }
 
+    /**
+     * Estimate whether the given file (represented as file name) is tracked in this commit
+     * @param fileName the given file name
+     * @return true if the file is tracked in this commit, false otherwise
+     */
+    boolean hasFile(String fileName) {
+        return fileRefs.containsKey(fileName);
+    }
+
     public String commitInfoStr() {
         StringBuilder sb = new StringBuilder();
         sb.append("===").append("\n");
@@ -188,7 +196,7 @@ public class Commit implements Serializable {
         return sb.toString();
     }
 
-public byte[] readFileContent(String fileName) {
+public byte[] getFileContent(String fileName) {
         if (!fileRefs.containsKey(fileName)) {
 //            throw error("File does not exist in that commit.");
             throw error("The file " + "\" " + fileName + "\"" + " doesn't exist in the commit: " + hash());

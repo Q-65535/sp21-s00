@@ -545,7 +545,7 @@ public class Repository {
         if (!fileExistsInCommit(commit, fileName)) {
             throw error("File does not exist in that commit.");
         }
-        byte[] fileContent = commit.readFileContent(fileName);
+        byte[] fileContent = commit.getFileContent(fileName);
         writeContents(join(CWD, fileName), fileContent);
     }
 
