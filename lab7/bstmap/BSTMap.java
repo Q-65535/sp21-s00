@@ -3,7 +3,7 @@ package bstmap;
 import java.util.Iterator;
 import java.util.Set;
 
-public class BSTMap<K extends Comparable, V> implements Map61B<K, V> {
+public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
 
     private int size;
     private TreeNode root;
@@ -105,7 +105,7 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K, V> {
     }
 
     @Override
-    public Set keySet() {
+    public Set<K> keySet() {
         throw new UnsupportedOperationException("keySet operation is not supported");
     }
 
@@ -120,7 +120,7 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K, V> {
     }
 
     @Override
-    public Iterator iterator() {
+    public Iterator<K> iterator() {
         throw new UnsupportedOperationException("iterator is not supported");
     }
 
