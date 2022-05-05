@@ -35,22 +35,7 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
 
     @Override
     public boolean containsKey(K key) {
-        return containsHelper(root, key);
-    }
-
-    private boolean containsHelper(TreeNode cur, K key) {
-        if (cur == null) return false;
-        if (cur.key.compareTo(key) == 0) {
-            return true;
-        }
-
-        boolean isFoundInLeft = containsHelper(cur.left, key);
-        if (isFoundInLeft) {
-            return true;
-            // if left is not found, try right
-        } else {
-            return containsHelper(cur.right, key);
-        }
+        return get(key) != null;
     }
 
     @Override
