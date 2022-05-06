@@ -35,23 +35,31 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
 
     @Override
     public boolean containsKey(K key) {
-        return get(key) != null;
+        return getHelper(root, key) != null;
     }
 
     @Override
     public V get(K key) {
-        return getHelper(root, key);
+        TreeNode node = getHelper(root, key);
+        if (node == null) {
+            return null;
+        } else {
+            return node.val;
+        }
     }
 
-    private V getHelper(TreeNode cur, K key) {
+    /**
+     * Helper function for finding the target node given the key value
+     */
+    private TreeNode getHelper(TreeNode cur, K key) {
         if (cur == null) {
             return null;
         }
         if (cur.key.compareTo(key) == 0) {
-            return cur.val;
+            return cur;
         }
 
-        V leftFind = getHelper(cur.left, key);
+        TreeNode leftFind = getHelper(cur.left, key);
         if (leftFind != null) {
             return leftFind;
             // if left is not found, try right
