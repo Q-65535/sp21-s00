@@ -148,13 +148,35 @@ public class Repository {
             headCheckoutCommit(hashText);
             // otherwise, update the current branch
         } else {
-            String curBranchName = getCurBranchName();
-            File curBranchFile = join(HEADS_DIR, curBranchName);
-            writeContents(curBranchFile, hashText);
+            changeCurBranchPtr(hashText);
         }
 
         // finally, clear the staging area
         clearStaging();
+    }
+
+    /**
+     * Change the branch to point to other commit
+     * @param branchName The branch to be changed
+     * @param commitHash The commit hash the branch will point to
+     */
+    private static void changeBranchPtr(String branchName, String commitHash) {
+        if (!branchExists(branchName)) {
+            throw error("branch name " + branchName + " doesn't exist!");
+        }
+        if (!commitExists(commitHash)) {
+            throw error("commit" + branchName + " doesn't exist!");
+        }
+        File branchFile = join(HEADS_DIR, branchName);
+        writeContents(branchFile, commitHash);
+    }
+
+    /**
+     * Change current branch to point to the given commit hash
+     * @param commitHash
+     */
+    private static void changeCurBranchPtr(String commitHash) {
+        changeBranchPtr(getCurBranchName(), commitHash);
     }
 
     private static void clearStaging() {
@@ -585,26 +607,43 @@ public class Repository {
         if (!isDetachedHead() && branchName.equals(getCurBranchName())) {
             throw error("No need to checkout the current branch.");
         }
+        //TODO carefully deal with this case according to the project specification
         if (!getUntrackedFileNamesList().isEmpty()) {
             throw error("There is an untracked file in the way; delete it, or add and commit it first.");
         }
         // the commit that the check-out branch points to
         Commit commit = getCommitFromBranchName(branchName);
-        // delete all plain files in the working directory
-        List<String> fileNames = plainFilenamesIn(CWD);
-        for (String fileName : fileNames) {
-            restrictedDelete(join(CWD, fileName));
-        }
+        // delete all plain files that are tracked in current commit
+        delFilesInHeadCommit();
         // check out and clear staging area
         checkoutAllCommitFiles(commit);
         headCheckoutBranch(branchName);
         clearStaging();
     }
 
+    /**
+     * Delete all files that are tracked in head commit
+     */
+    private static void delFilesInHeadCommit() {
+        Commit headCommit = getHeadCommit();
+        // delete all plain files that are tracked in current commit
+        List<String> trackedFileNames = headCommit.getTrackedFileNames();
+        for (String trackedFileName : trackedFileNames) {
+            restrictedDelete(join(CWD, trackedFileName));
+        }
+    }
+
+    /**
+     * Checkout all files in the given commit in CWD
+     */
     private static void checkoutAllCommitFiles(Commit commit) {
         for (Map.Entry<String, String> entry : commit.getFileRefs().entrySet()) {
             checkoutCommitFile(commit.hash(), entry.getKey());
         }
+    }
+
+    private static void checkoutAllCommitFiles(String commitHash) {
+        checkoutAllCommitFiles(getCommitFromHash(commitHash));
     }
 
     private static Commit getCommitFromBranchName(String branchName) {
@@ -616,6 +655,18 @@ public class Repository {
 
     private static boolean branchExists(String branchName) {
         return join(HEADS_DIR, branchName).exists();
+    }
+
+    public static void reset(String commitHash) {
+        // the case when the given commit doesn't exist
+        if (!commitExists(commitHash)) {
+            throw error("No commit with that id exists.");
+        }
+
+        delFilesInHeadCommit();
+        checkoutAllCommitFiles(commitHash);
+        changeCurBranchPtr(commitHash);
+        clearStaging();
     }
 }
 

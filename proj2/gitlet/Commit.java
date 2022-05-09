@@ -4,9 +4,7 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import static gitlet.Utils.*;
 import static gitlet.Repository.*;
@@ -212,5 +210,13 @@ public byte[] getFileContent(String fileName) {
 
     public Commit getParentCommit() {
         return getCommitFromHash(parent);
+    }
+
+    public List<String> getTrackedFileNames() {
+        ArrayList<String> fileNames = new ArrayList<>();
+        for (Map.Entry<String, String> entry : fileRefs.entrySet()) {
+            fileNames.add(entry.getKey());
+        }
+        return fileNames;
     }
 }

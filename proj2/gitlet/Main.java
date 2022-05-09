@@ -113,6 +113,13 @@ public class Main {
                 String rmBranchName = args[1];
                 removeBranch(rmBranchName);
                 break;
+            case "rest":
+                if (!argsLenEqualCheck(args, 2)) {
+                    exitWithMessage("rest usage: java gitlet.Main reset [commit id]");
+                }
+                String commitHash = args[1];
+                reset(commitHash);
+                break;
         }
     }
 
