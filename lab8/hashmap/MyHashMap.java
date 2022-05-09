@@ -120,6 +120,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     }
 
     @Override
+    /**
+     * Get the value according to the given key
+     */
     public V get(K key) {
         Node node = getNode(key);
         if (node == null) {
@@ -129,6 +132,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         }
     }
 
+    /**
+     * Get the node according to the given key
+     */
     private Node getNode(K key) {
         int position = getPosition(key);
         // if there is no bucket in the position, return false
@@ -142,9 +148,6 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
     /**
      * Find the node according to the key in a given bucket
-     * @param key
-     * @param bucket
-     * @return
      */
     private Node getNodeInBucket(K key, Collection<Node> bucket) {
         // serach for the target node
@@ -178,7 +181,6 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * Put the key value pair into the given buckets
      */
     private void put(Collection[] buckets, K key, V value) {
-
         int position = getPosition(key);
         // if the position has no bucket, create a new one and add the node
         if (buckets[position] == null) {
@@ -195,7 +197,6 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
                 nodeInBucket.value = value;
             }
         }
-
     }
 
     /**
@@ -234,9 +235,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     }
 
     /**
-     * Get the position based on the key
-     * @param key
-     * @return
+     * Get the position of the bucket based on the key
      */
     private int getPosition(K key) {
         return Math.abs(key.hashCode()) % initialSize;
