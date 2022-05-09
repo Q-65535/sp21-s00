@@ -99,6 +99,20 @@ public class Main {
                     checkoutCommitFile(commitId, checkFileName);
                 }
                 break;
+            case "branch":
+                if (!argsLenEqualCheck(args, 2)) {
+                    exitWithMessage("branch usage: java gitlet.Main branch [branch name]");
+                }
+                String branchName = args[1];
+                createBranch(branchName);
+                break;
+            case "rm-branch":
+                if (!argsLenEqualCheck(args, 2)) {
+                    exitWithMessage("rm-branch usage: java gitlet.Main rm-branch [branch name]");
+                }
+                String rmBranchName = args[1];
+                removeBranch(rmBranchName);
+                break;
         }
     }
 

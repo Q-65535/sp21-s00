@@ -7,7 +7,7 @@ import java.util.*;
  *  access to elements via get(), remove(), and put() in the best case.
  *
  *  Assumes null keys will never be inserted, and does not resize down upon remove().
- *  @author YOUR NAME HERE
+ *  @author Di Wu
  */
 public class MyHashMap<K, V> implements Map61B<K, V> {
 

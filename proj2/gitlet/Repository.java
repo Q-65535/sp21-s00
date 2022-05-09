@@ -202,12 +202,29 @@ public class Repository {
     /**
      * Create a branch from current HEAD based on given branch name
      *
-     * @param BranchName The name of the branch to be created
+     * @param branchName The name of the branch to be created
      */
-    public static void createBranch(String BranchName) {
-        File branchFile = join(HEADS_DIR, BranchName);
+    public static void createBranch(String branchName) {
+        if (branchExists(branchName)) {
+            throw error("A branch with that name already exists.");
+        }
+        File branchFile = join(HEADS_DIR, branchName);
         String headCommitHash = getHeadHash();
         Utils.writeContents(branchFile, headCommitHash);
+    }
+
+    public static void removeBranch(String branchName) {
+        if (!branchExists(branchName)) {
+            throw error("A branch with that name does not exist.");
+        }
+        if (getCurBranchName().equals(branchName)) {
+            throw error("Cannot remove the current branch.");
+        }
+        restrictedDelete(getBranchFile(branchName));
+    }
+
+    private static File getBranchFile(String branchName) {
+        return join(HEADS_DIR, branchName);
     }
 
     public static String getHeadHash() {
