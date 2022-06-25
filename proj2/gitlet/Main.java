@@ -125,6 +125,13 @@ public class Main {
                 String commitHash = args[1];
                 reset(commitHash);
                 break;
+            case "merge":
+                if (!argsLenEqualCheck(args, 2)) {
+                    exitWithMessage("Incorrect operands.");
+                }
+                String mergeBranchName = args[1];
+                merge(mergeBranchName);
+                break;
             default :
                 System.out.println("No command with that name exists.");
                 break;
