@@ -3,6 +3,7 @@ package gitlet;
 import java.io.File;
 import java.util.*;
 
+import static gitlet.MergeFileStatus.*;
 import static gitlet.Utils.*;
 
 // TODO: any imports you need here
@@ -102,7 +103,7 @@ public class Repository {
             // create initial commit
             Commit initial_commit = Commit.initialCommit();
             initial_commit.makePersistent();
-            String hashText = initial_commit.hash();
+            String hashText = initial_commit.getHash();
 
             headCheckoutCommit(hashText);
             // initialize the master branch
@@ -145,7 +146,7 @@ public class Repository {
         }
         Commit newCommit = new Commit(message, getHeadHash());
         newCommit.makePersistent();
-        String hashText = newCommit.hash();
+        String hashText = newCommit.getHash();
         // in detached head state, commit means checkout the new commit
         if (isDetachedHead()) {
             headCheckoutCommit(hashText);
@@ -206,6 +207,7 @@ public class Repository {
     public static Commit getCommitFromHash(String hashText) {
         File commitFile = join(COMMITS_DIR, hashText);
         // if the given hash text is in the short version, find the corresponding commit file
+        // @Smell maybe we have a cleaner way to find the commit
         if (hashText.length() == 8) {
             for (File file : COMMITS_DIR.listFiles()) {
                 String FileHash = file.getName();
@@ -440,7 +442,7 @@ public class Repository {
         List<Commit> commitList = getAllCommits();
         for (Commit commit : commitList) {
             if (message.equals(commit.getMessage())) {
-                res.append(commit.hash()).append("\n");
+                res.append(commit.getHash()).append("\n");
             }
         }
         // if no message matches, error
@@ -634,7 +636,7 @@ public class Repository {
     }
 
     public static void checkoutCommitFile(Commit commit, String fileName) {
-        checkoutCommitFile(commit.hash(), fileName);
+        checkoutCommitFile(commit.getHash(), fileName);
     }
 
     private static boolean fileExistsInCommit(Commit commit, String fileName) {
@@ -643,6 +645,7 @@ public class Repository {
 
     private static boolean commitExists(String commitHash) {
         // if the given hash text is in the short version, find the corresponding commit file
+        // @Smell maybe we have a cleaner way to find the commit
         if (commitHash.length() == 8) {
             for (File file : COMMITS_DIR.listFiles()) {
                 String FileHash = file.getName();
@@ -695,7 +698,7 @@ public class Repository {
      */
     private static void checkoutAllCommitFiles(Commit commit) {
         for (Map.Entry<String, String> entry : commit.getFileRefs().entrySet()) {
-            checkoutCommitFile(commit.hash(), entry.getKey());
+            checkoutCommitFile(commit.getHash(), entry.getKey());
         }
     }
 
@@ -733,10 +736,163 @@ public class Repository {
         clearStaging();
     }
 
+    public static void merge(String branchName) {
+        if (!getStaging().isEmpty()) {
+            exit("You have uncommitted changes");
+        }
+        if (!branchExists(branchName)) {
+            exit("A branch with that name does not exist.");
+        }
+        if (getCommitFromBranchName(branchName).equals(getHeadCommit())) {
+            exit("Cannot merge a branch with itself.");
+        }
+        // @Logic: do something better to deal with untracked files. Instead of just exit once we find an untracked file.
+        if (!getUntrackedFileNames().isEmpty()) {
+            exit("There is an untracked file in the way; delete it, or add and commit it first.");
+        }
+
+        Commit otherCommit = getCommitFromBranchName(branchName);
+        Commit thisCommit = getHeadCommit();
+        Commit splitPointCommit = getSplitPointCommit(thisCommit, otherCommit);
+        if (splitPointCommit.equals(otherCommit)) {
+            exit("Given branch is an ancestor of the current branch.");
+        }
+        if (splitPointCommit.equals(thisCommit)) {
+            checkoutBranch(branchName);
+            exit("Current branch fast-forwarded.");
+        }
+        // get all the file names in this and other commits, put them in a set
+        Set<String> fileNames = new HashSet<>();
+        List<String> thisFileNames = thisCommit.getTrackedFileNames();
+        List<String> otherFileNames = thisCommit.getTrackedFileNames();
+        fileNames.addAll(thisFileNames);
+        fileNames.addAll(otherFileNames);
+
+        boolean hasMergeConflict = false;
+        for (String fileName : fileNames) {
+            MergeFileStatus thisStatus = fileStatusCheck(splitPointCommit, thisCommit, fileName);
+            MergeFileStatus otherStatus = fileStatusCheck(splitPointCommit, otherCommit, fileName);
+            if (thisStatus.equals(UNCHANGED)) {
+                if (otherStatus.equals(MODIFIED) || otherStatus.equals(ADDED)) {
+                    checkoutCommitFile(otherCommit, fileName);
+                    // stage it
+                    addFile(fileName);
+                }
+                if (otherStatus.equals(DELETED)) {
+                    removeFile(fileName);
+                }
+            }
+            // the case of the file being delted in both commits are not possible, because the file is selected from those two commits
+            if (thisStatus.equals(MODIFIED) || thisStatus.equals(DELETED)) {
+                if (otherStatus.equals(MODIFIED) || otherStatus.equals(DELETED)) {
+                    // @Logic: in mergeFile, we check whether the file is in both of the two commits
+                    // @Smell: in mergeFile, we do a lot functions that are not related to merge
+                    hasMergeConflict = mergeFile(thisCommit, otherCommit, fileName);
+                }
+            }
+            if (thisStatus.equals(ADDED) && otherStatus.equals(ADDED)) {
+                hasMergeConflict = mergeFile(thisCommit, otherCommit, fileName);
+            }
+        }
+
+        commit("Merged" + branchName + "into" + getHeadBranchName() + ".");
+        if (hasMergeConflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
+    }
+
+    private static MergeFileStatus fileStatusCheck(Commit splitPointCommit, Commit curCommit, String fileName) {
+        // the file is not in both of the two commits
+        if (!splitPointCommit.hasFile(fileName) && !curCommit.hasFile(fileName)) {
+            return UNCHANGED;
+        }
+        if (!splitPointCommit.hasFile(fileName) && curCommit.hasFile(fileName)) {
+            return ADDED;
+        }
+        if (splitPointCommit.hasFile(fileName) && !curCommit.hasFile(fileName)) {
+            return DELETED;
+        }
+        if (splitPointCommit.hasFile(fileName) && curCommit.hasFile(fileName)) {
+            if (splitPointCommit.getFileHash(fileName).equals(curCommit.getFileHash(fileName))) {
+                return UNCHANGED;
+            }
+            else {
+                return MODIFIED;
+            }
+        }
+        // @Smell do something better to not allow this return statement, because the code will not fall into this area
+        return UNCHANGED;
+    }
+
+    /** Get the splitting point commit of the two given commits */
+    private static Commit getSplitPointCommit(Commit ca, Commit cb) {
+        int stepCountA = 0;
+        Commit tempA = ca;
+        while (tempA.hasParent()) {
+            tempA = tempA.getParentCommit();
+            stepCountA++;
+        }
+        int stepCountB = 0;
+        Commit tempB = ca;
+        while (tempB.hasParent()) {
+            tempB = tempB.getParentCommit();
+            stepCountB++;
+        }
+        int distanceDiff = Math.abs(stepCountA - stepCountB);
+        // move the farther commit pointer closer, so the distances to the root for two pointers are the same
+        if (stepCountA > stepCountB) {
+            for (int i = 0; i < distanceDiff; i++) {
+                ca = ca.getParentCommit();
+            }
+        } else {
+            for (int i = 0; i < distanceDiff; i++) {
+                cb = cb.getParentCommit();
+            }
+        }
+
+        while (!ca.equals(cb)) {
+            ca = ca.getParentCommit();
+            cb = cb.getParentCommit();
+        }
+        return ca;
+    }
+
+    /** merge two files in different commits, return true if the files are merged */
+    private static boolean mergeFile(Commit mainCommit, Commit otherCommit, String fileName) {
+        // if the file doesn't exist in both of the given commits, just return
+        if (!mainCommit.hasFile(fileName) && !otherCommit.hasFile(fileName)) {
+            return false;
+        }
+        // if the files in two commits are just identical, do nothing
+        if (mainCommit.hasFile(fileName) && otherCommit.hasFile(fileName)) {
+            if (mainCommit.getFileHash(fileName).equals(otherCommit.getFileHash(fileName))) {
+                return false;
+            }
+        }
+        String mainFileContent;
+        if (mainCommit.hasFile(fileName)) {
+            mainFileContent = new String(mainCommit.getFileContent(fileName));
+        } else {
+            mainFileContent = "";
+        }
+        String otherFileContent;
+        if (otherCommit.hasFile(fileName)) {
+            otherFileContent = new String(otherCommit.getFileContent(fileName));
+        } else {
+            otherFileContent = "";
+        }
+        String headLine = "<<<<<<< HEAD";
+        String middleLine = "=======";
+        String tailLine = ">>>>>>>";
+        writeContents(join(CWD, fileName), headLine, mainFileContent, middleLine, otherFileContent, tailLine);
+        // remember stage it
+        addFile(fileName);
+        return true;
+    }
+
     // universal exit way
     private static void exit(String exitMessage) {
         System.out.println(exitMessage);
         System.exit(0);
     }
 }
-

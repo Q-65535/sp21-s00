@@ -98,6 +98,21 @@ public class Commit implements Serializable {
         this.sParent = sParent;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Commit commit = (Commit) o;
+
+        return getHash().equals(commit.getHash());
+    }
+
+    @Override
+    public int hashCode() {
+        return getHash().hashCode();
+    }
+
     public String getMessage() {
         return message;
     }
@@ -159,14 +174,14 @@ public class Commit implements Serializable {
     }
 
     public void makePersistent() {
-        File commitFile = Utils.join(Repository.COMMITS_DIR, hash());
+        File commitFile = Utils.join(Repository.COMMITS_DIR, getHash());
         Utils.writeObject(commitFile, this);
     }
 
     /**
      * get the string representation of SHA-1 hash value of this commit
      */
-    public String hash() {
+    public String getHash() {
         if (commitHash == null) {
             commitHash = sha1(serialize(this));
         }
@@ -175,6 +190,7 @@ public class Commit implements Serializable {
 
     /**
      * Estimate whether the given file (represented as file name) is tracked in this commit
+     *
      * @param fileName the given file name
      * @return true if the file is tracked in this commit, false otherwise
      */
@@ -186,7 +202,7 @@ public class Commit implements Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append("===").append("\n");
         // hash info
-        sb.append("commit ").append(hash()).append("\n");
+        sb.append("commit ").append(getHash()).append("\n");
         //  date info
         sb.append("Date: ").append(getDateStr()).append("\n");
         // message info
@@ -194,10 +210,18 @@ public class Commit implements Serializable {
         return sb.toString();
     }
 
-public byte[] getFileContent(String fileName) {
+    public String getFileHash(String fileName) {
+        if (!fileRefs.containsKey(fileName)) {
+            // throw error("File does not exist in that commit.");
+            throw error("The file " + "\" " + fileName + "\"" + " doesn't exist in the commit: " + getHash());
+        }
+        return fileRefs.get(fileName);
+    }
+
+    public byte[] getFileContent(String fileName) {
         if (!fileRefs.containsKey(fileName)) {
 //            throw error("File does not exist in that commit.");
-            throw error("The file " + "\" " + fileName + "\"" + " doesn't exist in the commit: " + hash());
+            throw error("The file " + "\" " + fileName + "\"" + " doesn't exist in the commit: " + getHash());
         }
         String blobHash = fileRefs.get(fileName);
         File blobFile = join(BLOBS_DIR, blobHash);
