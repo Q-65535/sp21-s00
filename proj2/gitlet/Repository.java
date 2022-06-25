@@ -64,7 +64,7 @@ public class Repository {
 
     private static String getHeadBranchName() {
         if (isDetachedHead()) {
-            throw error("DETACHED HEAD state, not on any branch!");
+            exit("DETACHED HEAD state, not on any branch!");
         }
         String refForm = readContentsAsString(CUR_HEAD);
         String[] split = refForm.split(" ");
@@ -166,10 +166,10 @@ public class Repository {
      */
     private static void changeBranchPtr(String branchName, String commitHash) {
         if (!branchExists(branchName)) {
-            throw error("branch name " + branchName + " doesn't exist!");
+            exit("branch name " + branchName + " doesn't exist!");
         }
         if (!commitExists(commitHash)) {
-            throw error("commit" + branchName + " doesn't exist!");
+            exit("commit" + branchName + " doesn't exist!");
         }
         File branchFile = join(HEADS_DIR, branchName);
         writeContents(branchFile, commitHash);
@@ -206,7 +206,7 @@ public class Repository {
     public static Commit getCommitFromHash(String hashText) {
         File commitFile = join(COMMITS_DIR, hashText);
         if (!commitFile.exists()) {
-            throw error("the commit hash does not exist: " + hashText);
+            exit("the commit hash does not exist: " + hashText);
         }
         return readObject(commitFile, Commit.class);
     }
@@ -218,7 +218,7 @@ public class Repository {
      */
     public static void headCheckoutCommit(String hashText) {
         if (!join(COMMITS_DIR, hashText).exists()) {
-            throw error("The commit hash doesn't exist: " + hashText);
+            exit("The commit hash doesn't exist: " + hashText);
         }
         Utils.writeContents(CUR_HEAD, hashText);
     }
@@ -230,7 +230,7 @@ public class Repository {
      */
     public static void headCheckoutBranch(String branchName) {
         if (!join(HEADS_DIR, branchName).isFile()) {
-            throw error("no such branch exists: " + branchName);
+            exit("no such branch exists: " + branchName);
         }
         // write the branch name to current head
         Utils.writeContents(CUR_HEAD, "ref: ", branchName);
@@ -253,7 +253,7 @@ public class Repository {
 
     public static void removeBranch(String branchName) {
         if (!branchExists(branchName)) {
-            throw error("A branch with that name does not exist.");
+            exit("A branch with that name does not exist.");
         }
         if (getHeadBranchName().equals(branchName)) {
             System.out.println("Cannot remove the current branch.");
@@ -611,7 +611,7 @@ public class Repository {
 
     public static void checkoutCommitFile(String commitHash, String fileName) {
         if (!commitExists(commitHash)) {
-            throw error("No commit with that id exists.");
+            exit("No commit with that id exists.");
         }
         Commit commit = getCommitFromHash(commitHash);
         if (!fileExistsInCommit(commit, fileName)) {
@@ -636,10 +636,10 @@ public class Repository {
 
     public static void checkoutBranch(String branchName) {
         if (!branchExists(branchName)) {
-            throw error("No such branch exists.");
+            exit("No such branch exists.");
         }
         if (!isDetachedHead() && branchName.equals(getHeadBranchName())) {
-            throw error("No need to checkout the current branch.");
+            exit("No need to checkout the current branch.");
         }
         //TODO carefully deal with this case according to the project specification
         if (!getUntrackedFileNames().isEmpty()) {
@@ -698,13 +698,19 @@ public class Repository {
     public static void reset(String commitHash) {
         // the case when the given commit doesn't exist
         if (!commitExists(commitHash)) {
-            throw error("No commit with that id exists.");
+            exit("No commit with that id exists.");
         }
 
         delFilesInHeadCommit();
         checkoutAllCommitFiles(commitHash);
         changeHeadBranchPtr(commitHash);
         clearStaging();
+    }
+
+    // universal exit way
+    private static void exit(String exitMessage) {
+        System.out.println(exitMessage);
+        System.exit(0);
     }
 }
 

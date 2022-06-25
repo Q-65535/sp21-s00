@@ -113,7 +113,7 @@ public class Main {
                 String rmBranchName = args[1];
                 removeBranch(rmBranchName);
                 break;
-            case "rest":
+            case "reset":
                 if (!argsLenEqualCheck(args, 2)) {
                     exitWithMessage("Incorrect operands.");
                 }
