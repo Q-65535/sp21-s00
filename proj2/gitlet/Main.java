@@ -20,12 +20,12 @@ public class Main {
             System.out.println("Please enter a command.");
             System.exit(0);
         }
-        if (!GITLET_DIR.exists()) {
+        String firstArg = args[0];
+        // we can only do init when the gitlet is not initialized!
+        if (!GITLET_DIR.exists() && !firstArg.equals("init")) {
             System.out.println("Gitlet has not been initialized!");
             System.exit(0);
         }
-
-        String firstArg = args[0];
         switch (firstArg) {
             case "init":
                 init();
