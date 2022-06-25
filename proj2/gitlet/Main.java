@@ -17,7 +17,7 @@ public class Main {
      */
     public static void main(String[] args) {
         if (args.length == 0) {
-            System.out.println("Empty argument!");
+            System.out.println("Please enter a command.");
             System.exit(0);
         }
         String firstArg = args[0];
@@ -27,20 +27,20 @@ public class Main {
                 break;
             case "add":
                 if (!argsLenEqualCheck(args, 2)) {
-                    exitWithMessage("Please specify one file th be added");
+                    exitWithMessage("Incorrect operands.");
                 }
                 String addFileName = args[1];
                 addFile(addFileName);
                 break;
             case "rm":
                 if (!argsLenEqualCheck(args, 2)) {
-                    exitWithMessage("Please specify one file to be removed");
+                    exitWithMessage("Incorrect operands.");
                 }
                 removeFile(args[1]);
                 break;
             case "commit":
                 if (!argsLenEqualCheck(args, 2)) {
-                    exitWithMessage("Please enter a commit message.");
+                    exitWithMessage("Incorrect operands.");
                 }
                 TreeMap<String, String> staging = getStaging();
                 if (staging.isEmpty()) {
@@ -51,31 +51,31 @@ public class Main {
                 break;
             case "log":
                 if (!argsLenEqualCheck(args, 1)) {
-                    exitWithMessage("no argument needed");
+                    exitWithMessage("Incorrect operands.");
                 }
                 System.out.print(log());
                 break;
             case "global-log":
                 if (!argsLenEqualCheck(args, 1)) {
-                    exitWithMessage("no argument needed");
+                    exitWithMessage("Incorrect operands.");
                 }
                 System.out.println(globalLog());
                 break;
             case "find":
                 if (!argsLenEqualCheck(args, 2)) {
-                    exitWithMessage("Please specify a message");
+                    exitWithMessage("Incorrect operands.");
                 }
                 System.out.println(find(args[1]));
                 break;
             case "status":
                 if (!argsLenEqualCheck(args, 1)) {
-                    exitWithMessage("no argument needed");
+                    exitWithMessage("Incorrect operands.");
                 }
                 System.out.print(status());
                 break;
             case "checkout":
                 if (!argsLenRangeCheck(args, 2, 4)) {
-                    exitWithMessage("Please specify a file name, or file name with a commit, or a branch");
+                    exitWithMessage("Incorrect operands.");
                 }
                 // if checkout one file in current commit
                 if (args.length == 3) {
@@ -108,17 +108,20 @@ public class Main {
                 break;
             case "rm-branch":
                 if (!argsLenEqualCheck(args, 2)) {
-                    exitWithMessage("rm-branch usage: java gitlet.Main rm-branch [branch name]");
+                    exitWithMessage("Incorrect operands.");
                 }
                 String rmBranchName = args[1];
                 removeBranch(rmBranchName);
                 break;
             case "rest":
                 if (!argsLenEqualCheck(args, 2)) {
-                    exitWithMessage("rest usage: java gitlet.Main reset [commit id]");
+                    exitWithMessage("Incorrect operands.");
                 }
                 String commitHash = args[1];
                 reset(commitHash);
+                break;
+            default :
+                System.out.println("No command with that name exists.");
                 break;
         }
     }
