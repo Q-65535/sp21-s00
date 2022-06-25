@@ -642,6 +642,17 @@ public class Repository {
     }
 
     private static boolean commitExists(String commitHash) {
+        // if the given hash text is in the short version, find the corresponding commit file
+        if (commitHash.length() == 8) {
+            for (File file : COMMITS_DIR.listFiles()) {
+                String FileHash = file.getName();
+                // If we find a fileHash that has the same first few sub string, return true
+                if (FileHash.substring(0, 8).equals(commitHash)) {
+                    return true;
+                }
+            }
+            return false;
+        }
         return join(COMMITS_DIR, commitHash).exists();
     }
 
