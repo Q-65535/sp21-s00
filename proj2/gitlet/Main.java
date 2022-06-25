@@ -20,6 +20,11 @@ public class Main {
             System.out.println("Please enter a command.");
             System.exit(0);
         }
+        if (!GITLET_DIR.exists()) {
+            System.out.println("Gitlet has not been initialized!");
+            System.exit(0);
+        }
+
         String firstArg = args[0];
         switch (firstArg) {
             case "init":
@@ -80,7 +85,7 @@ public class Main {
                 // if checkout one file in current commit
                 if (args.length == 3) {
                     if (!args[1].equals("--")) {
-                        exitWithMessage("Please use \"--\" before the file name");
+                        exitWithMessage("Incorrect operands.");
                     }
                     String checkFileName = args[2];
                     checkoutCommitFile(getHeadHash(), checkFileName);
@@ -92,7 +97,7 @@ public class Main {
                 // if checkout one file in a specific commit
                 if (args.length == 4) {
                     if (!args[2].equals("--")) {
-                        exitWithMessage("Please use \"--\" before the file name");
+                        exitWithMessage("Incorrect operands.");
                     }
                     String commitId = args[1];
                     String checkFileName = args[3];
