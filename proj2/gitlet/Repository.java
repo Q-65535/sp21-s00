@@ -205,6 +205,16 @@ public class Repository {
      */
     public static Commit getCommitFromHash(String hashText) {
         File commitFile = join(COMMITS_DIR, hashText);
+        // if the given hash text is in the short version, find the corresponding commit file
+        if (hashText.length() == 8) {
+            for (File file : COMMITS_DIR.listFiles()) {
+                String FileHash = file.getName();
+                if (FileHash.substring(0, 8).equals(hashText)) {
+                    commitFile = join(COMMITS_DIR, FileHash);
+                    break;
+                }
+            }
+        }
         if (!commitFile.exists()) {
             exit("the commit hash does not exist: " + hashText);
         }

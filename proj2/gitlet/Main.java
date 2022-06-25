@@ -23,7 +23,7 @@ public class Main {
         String firstArg = args[0];
         // we can only do init when the gitlet is not initialized!
         if (!GITLET_DIR.exists() && !firstArg.equals("init")) {
-            System.out.println("Gitlet has not been initialized!");
+            System.out.println("Not in an initialized Gitlet directory.");
             System.exit(0);
         }
         switch (firstArg) {
