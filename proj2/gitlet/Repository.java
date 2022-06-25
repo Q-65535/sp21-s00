@@ -372,7 +372,7 @@ public class Repository {
 
 
     /**
-     * remove a file from the staging area
+     * Using Gitlet command to remove a file in CWD. (this method not only delete the file, but also record the deletion in staging area)
      */
     public static void removeFile(String fileName) {
         Commit headCommit = getHeadCommit();
@@ -390,6 +390,7 @@ public class Repository {
                 System.exit(0);
             }
             // otherwise, remove it from staging area
+            // notice here that we don't delete the file in CWD, just remove it from staging area
             staging.remove(fileName);
         }
 
@@ -482,7 +483,7 @@ public class Repository {
             TreeMap<String, String> fileRefs = getHeadCommit().getFileRefs();
             if (!getStaging().containsKey(fileName) && !fileRefs.containsKey(fileName)) {
                 res.add(fileName);
-                // if the file is tracked in current commit, but it's staged for removal, Gitlet doesn't aware it's backed to the CWD
+                // if the file is tracked in current commit, but it's staged for removal. This means the file is removed and then added back manually. But Gitlet doesn't aware it's backed to the CWD
             } else if (fileRefs.containsKey(fileName) && getStaging().containsKey(fileName) && getStaging().get(fileName) == null) {
                 res.add(fileName);
             }
@@ -699,6 +700,10 @@ public class Repository {
         // the case when the given commit doesn't exist
         if (!commitExists(commitHash)) {
             exit("No commit with that id exists.");
+        }
+        // if there is untracked files, error
+        if (!getUntrackedFileNames().isEmpty()) {
+            exit("There is an untracked file in the way; delete it, or add and commit it first.");
         }
 
         delFilesInHeadCommit();
