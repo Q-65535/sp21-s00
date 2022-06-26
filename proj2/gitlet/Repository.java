@@ -883,9 +883,9 @@ public class Repository {
         } else {
             otherFileContent = "";
         }
-        String headLine = "<<<<<<< HEAD";
-        String middleLine = "=======";
-        String tailLine = ">>>>>>>";
+        String headLine = "<<<<<<< HEAD\n";
+        String middleLine = "=======\n";
+        String tailLine = ">>>>>>>\n";
         writeContents(join(CWD, fileName), headLine, mainFileContent, middleLine, otherFileContent, tailLine);
         // remember stage it
         addFile(fileName);
