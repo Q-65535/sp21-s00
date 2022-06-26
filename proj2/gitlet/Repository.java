@@ -422,7 +422,8 @@ public class Repository {
             curCommit = curCommit.getParentCommit();
             res.append(curCommit.commitInfoStr());
         }
-        return res.toString();
+        String finalResult = res.toString();
+        return finalResult;
     }
 
     public static String globalLog() {
@@ -764,7 +765,7 @@ public class Repository {
         // get all the file names in this and other commits, put them in a set
         Set<String> fileNames = new HashSet<>();
         List<String> thisFileNames = thisCommit.getTrackedFileNames();
-        List<String> otherFileNames = thisCommit.getTrackedFileNames();
+        List<String> otherFileNames = otherCommit.getTrackedFileNames();
         fileNames.addAll(thisFileNames);
         fileNames.addAll(otherFileNames);
 
@@ -795,7 +796,8 @@ public class Repository {
             }
         }
 
-        commit("Merged" + branchName + "into" + getHeadBranchName() + ".");
+        String message = "Merged " + branchName + " into " + getHeadBranchName() + ".";
+        commit(message);
         if (hasMergeConflict) {
             System.out.println("Encountered a merge conflict.");
         }
