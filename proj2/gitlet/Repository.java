@@ -696,13 +696,19 @@ public class Repository {
         if (!isDetachedHead() && branchName.equals(getHeadBranchName())) {
             exit("No need to checkout the current branch.");
         }
-        //TODO carefully deal with this case according to the project specification
-        if (!getUntrackedFileNames().isEmpty()) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            System.exit(0);
-        }
+        // @Smell: this code is similar to the code in reset, they treat untracked files in the same way
         // the commit that the check-out branch points to
         Commit commit = getCommitFromBranchName(branchName);
+        if (!getUntrackedFileNames().isEmpty()) {
+            List<String> targetCommitFileNames = commit.getTrackedFileNames();
+            // if the untracked files will be overriten, error
+            // @Incomplete: if the untracked file is identical to the file in given branch, we just proceed normally?
+            for (String untrackedFileNames : getUntrackedFileNames()) {
+                if (targetCommitFileNames.contains(untrackedFileNames)) {
+                    exit("There is an untracked file in the way; delete it, or add and commit it first.");
+                }
+            }
+        }
         // delete all plain files that are tracked in current commit
         delFilesInHeadCommit();
         // check out and clear staging area
