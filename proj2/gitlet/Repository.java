@@ -755,9 +755,15 @@ public class Repository {
         if (!commitExists(commitHash)) {
             exit("No commit with that id exists.");
         }
-        // if there is untracked files, error
+        Commit targetCommit = getCommitFromHash(commitHash);
         if (!getUntrackedFileNames().isEmpty()) {
-            exit("There is an untracked file in the way; delete it, or add and commit it first.");
+            List<String> targetCommitFileNames = targetCommit.getTrackedFileNames();
+            // if the untracked files will be overriten, error
+            for (String untrackedFileNames : getUntrackedFileNames()) {
+                if (targetCommitFileNames.contains(untrackedFileNames)) {
+                    exit("There is an untracked file in the way; delete it, or add and commit it first.");
+                }
+            }
         }
 
         delFilesInHeadCommit();
@@ -857,10 +863,15 @@ public class Repository {
 
     /** Get the splitting point commit of the two given commits */
     private static Commit getSplitPointCommit(Commit ca, Commit cb) {
-        Set<Commit> ancestorsA = getAllAncestors(ca);
-        Set<Commit> ancestorsB = getAllAncestors(cb);
-        ancestorsA.retainAll(ancestorsB);
-        Set<Commit> intersected = ancestorsA;
+        Set<Commit> relatedCommitsA = new HashSet<>();
+        relatedCommitsA.addAll(getAllAncestors(ca));
+        relatedCommitsA.add(ca);
+        Set<Commit> relatedCommitsB = new HashSet<>();
+        relatedCommitsB.addAll(getAllAncestors(cb));
+        relatedCommitsB.add(cb);
+
+        relatedCommitsA.retainAll(relatedCommitsB);
+        Set<Commit> intersected = relatedCommitsA;
         // record all the parents of the commits in the intersected set (their role are parents in the set)
         Set<Commit> parents = new HashSet<>();
         for (Commit c : intersected) {
