@@ -236,6 +236,14 @@ public class Commit implements Serializable {
         return getCommitFromHash(parent);
     }
 
+    public boolean hasSecondParent() {
+        return sParent != null;
+    }
+
+    public Commit getSecondParentCommit() {
+        return getCommitFromHash(sParent);
+    }
+
     public List<String> getTrackedFileNames() {
         ArrayList<String> fileNames = new ArrayList<>();
         for (Map.Entry<String, String> entry : fileRefs.entrySet()) {

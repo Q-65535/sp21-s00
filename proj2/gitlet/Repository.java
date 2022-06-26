@@ -159,6 +159,35 @@ public class Repository {
         clearStaging();
     }
 
+    // @Smell: the two commits methods are similar, there may be a cleaner way to write the code.
+    /** special commit method for merging. The given merge branch name indicates the other branch to be
+     *  merged into current branch */
+    private static void commit(String message, String mergeBranchName) {
+        if (!GITLET_DIR.exists()) {
+            System.out.println("Gitlet has not been initialized!");
+            System.exit(0);
+        }
+        // the commit message shouldn't be empty
+        if (message.length() == 0) {
+            System.out.println("Please enter a commit message.");
+            System.exit(0);
+        }
+        Commit otherBranchCommit = getCommitFromBranchName(mergeBranchName);
+        Commit newCommit = new Commit(message, getHeadHash(), otherBranchCommit.getHash());
+        newCommit.makePersistent();
+        String hashText = newCommit.getHash();
+        // in detached head state, commit means checkout the new commit
+        if (isDetachedHead()) {
+            headCheckoutCommit(hashText);
+            // otherwise, update the current branch
+        } else {
+            changeHeadBranchPtr(hashText);
+        }
+
+        // finally, clear the staging area
+        clearStaging();
+    }
+
     /**
      * Change the branch to point to other commit
      *
@@ -783,11 +812,11 @@ public class Repository {
                     removeFile(fileName);
                 }
             }
-            // the case of the file being delted in both commits are not possible, because the file is selected from those two commits
+            // the case of the file being deleted in both commits are not possible, because the file is selected from those two commits
             if (thisStatus.equals(MODIFIED) || thisStatus.equals(DELETED)) {
                 if (otherStatus.equals(MODIFIED) || otherStatus.equals(DELETED)) {
                     // @Logic: in mergeFile, we check whether the file is in both of the two commits
-                    // @Smell: in mergeFile, we do a lot functions that are not related to merge
+                    // @Smell: in mergeFile, we do a lot of functions that are not related to merge
                     hasMergeConflict = mergeFile(thisCommit, otherCommit, fileName);
                 }
             }
@@ -797,7 +826,7 @@ public class Repository {
         }
 
         String message = "Merged " + branchName + " into " + getHeadBranchName() + ".";
-        commit(message);
+        commit(message, branchName);
         if (hasMergeConflict) {
             System.out.println("Encountered a merge conflict.");
         }
@@ -828,35 +857,44 @@ public class Repository {
 
     /** Get the splitting point commit of the two given commits */
     private static Commit getSplitPointCommit(Commit ca, Commit cb) {
-        int stepCountA = 0;
-        Commit tempA = ca;
-        while (tempA.hasParent()) {
-            tempA = tempA.getParentCommit();
-            stepCountA++;
-        }
-        int stepCountB = 0;
-        Commit tempB = ca;
-        while (tempB.hasParent()) {
-            tempB = tempB.getParentCommit();
-            stepCountB++;
-        }
-        int distanceDiff = Math.abs(stepCountA - stepCountB);
-        // move the farther commit pointer closer, so the distances to the root for two pointers are the same
-        if (stepCountA > stepCountB) {
-            for (int i = 0; i < distanceDiff; i++) {
-                ca = ca.getParentCommit();
+        Set<Commit> ancestorsA = getAllAncestors(ca);
+        Set<Commit> ancestorsB = getAllAncestors(cb);
+        ancestorsA.retainAll(ancestorsB);
+        Set<Commit> intersected = ancestorsA;
+        // record all the parents of the commits in the intersected set (their role are parents in the set)
+        Set<Commit> parents = new HashSet<>();
+        for (Commit c : intersected) {
+            if (c.hasParent()) {
+                parents.add(c.getParentCommit());
             }
-        } else {
-            for (int i = 0; i < distanceDiff; i++) {
-                cb = cb.getParentCommit();
+            if (c.hasSecondParent()) {
+                parents.add(c.getSecondParentCommit());
             }
         }
+        // Then, we find the commit that doesn't play the role of parent in the intersected set
+        Commit splitPointCommit = null;
+        for (Commit c : intersected) {
+            if (!parents.contains(c)) {
+                splitPointCommit = c;
+            }
+        }
+        return splitPointCommit;
+    }
 
-        while (!ca.equals(cb)) {
-            ca = ca.getParentCommit();
-            cb = cb.getParentCommit();
+    /** Get all ancestors of the given commit, including second parents */
+    private static Set<Commit> getAllAncestors(Commit c) {
+        Set<Commit> ancestors = new HashSet<>();
+        if (c.hasParent()) {
+            Commit firstParentCommit = c.getParentCommit();
+            ancestors.add(firstParentCommit);
+            ancestors.addAll(getAllAncestors(firstParentCommit));
         }
-        return ca;
+        if (c.hasSecondParent()) {
+            Commit secondparentCommit = c.getSecondParentCommit();
+            ancestors.add(secondparentCommit);
+            ancestors.addAll(getAllAncestors(secondparentCommit));
+        }
+        return ancestors;
     }
 
     /** merge two files in different commits, return true if the files are merged */
