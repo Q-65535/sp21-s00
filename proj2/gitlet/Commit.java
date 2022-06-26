@@ -79,9 +79,9 @@ public class Commit implements Serializable {
     public Commit(String message, String parent) {
         this.date = new Date();
         this.message = message;
-        this.fileRefs = new TreeMap<>();
         this.parent = parent;
 
+        this.fileRefs = new TreeMap<>();
         inheritRefs();
         fetchStaging();
 
@@ -93,9 +93,12 @@ public class Commit implements Serializable {
     public Commit(String message, String parent, String sParent) {
         this.date = new Date();
         this.message = message;
-        //TODO add inherit reference function for two parents
         this.parent = parent;
         this.sParent = sParent;
+
+        this.fileRefs = new TreeMap<>();
+        inheritRefs();
+        fetchStaging();
     }
 
     @Override
