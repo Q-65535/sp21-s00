@@ -12,8 +12,8 @@ import java.util.Random;
  * Draws a world consisting of hexagonal regions.
  */
 public class HexWorld {
-    private static final int WIDTH = 50;
-    private static final int HEIGHT = 50;
+    private static final int WIDTH = 100;
+    private static final int HEIGHT = 100;
 	private static Random rm = new Random();
 
 	public static void addHexgon(int size, int row, int col, TETile tile, TETile[][] world) {
@@ -48,8 +48,8 @@ public class HexWorld {
 	}
 
 	private static void drawLowerShape(int size, int row, int col, TETile tile, TETile[][] world) {
-	// Imagine a regtangle surround the half down hexgon....
-	// And the position is the upper-left corner of the hexgon.
+		// Imagine a regtangle surround the half down hexgon....
+		// And the position is the upper-left corner of the hexgon.
 		int width = size + 2 *(size - 1);
 		int height = size;
 
@@ -97,15 +97,21 @@ public class HexWorld {
             }
         }
 
-		
-		for (int i = 0; i < 30; i++) {
-			int size = rm.nextInt(8);
-			int x = rm.nextInt(WIDTH - 10);
-			int y = rm.nextInt(HEIGHT - 10);
-			TETile randomTile = randomTile();
-			addHexgon(size, y, x, randomTile, world);
-		}
 
-        ter.renderFrame(world);
+		while (true) {
+			for (int i = 0; i < 10; i++) {
+				int size = rm.nextInt(8);
+				int x = rm.nextInt(WIDTH);
+				int y = rm.nextInt(HEIGHT);
+				TETile randomTile = randomTile();
+				addHexgon(size, y, x, randomTile, world);
+			}
+			try {
+				Thread.sleep(0);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+			ter.renderFrame(world);
+		}
 	}
 }
