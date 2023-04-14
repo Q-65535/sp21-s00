@@ -1,20 +1,138 @@
 package byow.Core;
 
-import byow.TileEngine.TERenderer;
-import byow.TileEngine.TETile;
+import byow.TileEngine.*;
+import edu.princeton.cs.introcs.StdDraw;
+import java.awt.*;
 
 public class Engine {
+	enum GameState {
+		INIT,
+		READSEED,
+		OPERATE,
+	}
+
     TERenderer ter = new TERenderer();
     /* Feel free to change the width and height. */
     public static final int WIDTH = 80;
-    public static final int HEIGHT = 30;
+    public static final int HEIGHT = 80;
+
+
+	private Coor avatarPosition;
+	private GameState gameState;
+	private TETile[][] world;
+
+
+	public Engine() {
+		this.gameState = GameState.INIT;
+	}
 
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
      * including inputs from the main menu.
      */
     public void interactWithKeyboard() {
+		StringBuilder seedStrBuilder = new StringBuilder();
+		ter.initialize(WIDTH, HEIGHT);
+		StdDraw.setPenRadius(0.02);
+		StdDraw.setPenColor(230, 60, 57);
+		StdDraw.text(WIDTH/2, HEIGHT/2, "Press N to start inputing a seed");
+		StdDraw.show();
+		while (true) {
+			if (!StdDraw.hasNextKeyTyped()) {
+				continue;
+			}
+			char typed =  StdDraw.nextKeyTyped();
+			switch(gameState) {
+			case INIT: {
+				if (typed == 'N') {
+					gameState = GameState.READSEED;
+					StdDraw.clear(new Color(0, 0, 0));
+					StdDraw.text(WIDTH*0.5, HEIGHT*0.8, "Enter the seed number (ends with S):");
+					StdDraw.show();
+				}
+				break;
+			}
+			case READSEED: {
+				if (Character.isDigit(typed)) {
+					seedStrBuilder.append(typed);
+					StdDraw.clear(new Color(0, 0, 0));
+					StdDraw.text(WIDTH*0.5, HEIGHT*0.8, "Enter the seed number (ends with S):");
+					StdDraw.text(WIDTH/2, HEIGHT/2, seedStrBuilder.toString());
+					StdDraw.show();
+				} else if (typed == 'S') {
+					String seedStr = seedStrBuilder.toString();
+					long seed = Long.parseLong(seedStr);
+					WorldGenerator gen = new WorldGenerator(seed);
+					world = gen.nextWorld(WIDTH, HEIGHT);
+					initAvatar();
+					world[avatarPosition.x][avatarPosition.y] = Tileset.AVATAR;
+					gameState = GameState.OPERATE;
+					ter.renderFrame(world);
+				} else {
+					throw new RuntimeException("the seed input is invalid");
+				}
+				break;
+			}
+			case OPERATE: {
+				move(typed);
+				ter.renderFrame(world);
+				break;
+			}
+			}
+		}
     }
+
+	private void move(char action) {
+		if (world == null) {
+			throw new RuntimeException("Cannot move, the world is not initialized yet");
+		}
+		clear(avatarPosition.x, avatarPosition.y, Tileset.FLOOR);
+		switch (action) {
+		case 'w': {
+			if (world[avatarPosition.x][avatarPosition.y + 1] == Tileset.FLOOR) {
+				avatarPosition.y++;
+			}
+			break;
+		}
+		case 's': {
+			if (world[avatarPosition.x][avatarPosition.y - 1] == Tileset.FLOOR) {
+				avatarPosition.y--;
+			}
+			break;
+		}
+		case 'd': {
+			if (world[avatarPosition.x + 1][avatarPosition.y] == Tileset.FLOOR) {
+				avatarPosition.x++;
+			}
+			break;
+		}
+		case 'a': {
+			if (world[avatarPosition.x - 1][avatarPosition.y] == Tileset.FLOOR) {
+				avatarPosition.x--;
+			}
+			break;
+		}
+		}
+		world[avatarPosition.x][avatarPosition.y] = Tileset.AVATAR;
+	}
+
+	private void initAvatar() {
+		if (world == null) {
+			throw new RuntimeException("Cannot initialize avatar, the world is not initialized yet");
+		}
+		for (int i = 0; i < WIDTH; i++) {
+			for (int j = 0; j < HEIGHT; j++) {
+				if (world[i][j] == Tileset.FLOOR) {
+					avatarPosition = new Coor(i, j);
+				}
+			}
+		}
+	}
+
+	private void clear(int x, int y, TETile tile) {
+		world[x][y] = tile;
+	}
+
 
     /**
      * Method used for autograding and testing your code. The input string will be a series
@@ -45,8 +163,13 @@ public class Engine {
         //
         // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
         // that works for many different input types.
-
-        TETile[][] finalWorldFrame = null;
+		if (input.charAt(0) != 'N' || input.charAt(input.length() - 1) != 'S') {
+			throw new RuntimeException("The input string is not valid");
+		}
+		String numberStr = input.substring(1, input.length() - 1);
+        int seed = Integer.parseInt(numberStr);
+		WorldGenerator gen = new WorldGenerator(seed);
+        TETile[][] finalWorldFrame = gen.nextWorld();
         return finalWorldFrame;
     }
 }
