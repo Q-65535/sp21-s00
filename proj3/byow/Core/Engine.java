@@ -166,7 +166,7 @@ public class Engine {
 		char firstChar = input.charAt(0);
 		char lastChar = input.charAt(input.length() - 1);
 		if ((firstChar != 'N' && firstChar != 'n')
-			|| lastChar != 'S' && lastChar != 's')) {
+			|| lastChar != 'S' && lastChar != 's') {
 			throw new RuntimeException("The input string is not valid");
 		}
 		String numberStr = input.substring(1, input.length() - 1);
