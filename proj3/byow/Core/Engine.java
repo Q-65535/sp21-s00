@@ -163,7 +163,8 @@ public class Engine {
         //
         // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
         // that works for many different input types.
-		if (input.charAt(0) != 'N' || input.charAt(input.length() - 1) != 'S') {
+		if (input.charAt(0) != 'N' || input.charAt(input.length() - 1) != 'S'
+			|| input.charAt(0) != 'n' || input.charAt(0) != 's') {
 			throw new RuntimeException("The input string is not valid");
 		}
 		String numberStr = input.substring(1, input.length() - 1);
