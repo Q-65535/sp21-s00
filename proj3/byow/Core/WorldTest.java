@@ -1,5 +1,6 @@
 package byow.Core;
 
+import java.io.File;
 import java.util.*;
 import byow.TileEngine.*;
 import org.junit.Test;
@@ -66,5 +67,6 @@ public class  WorldTest{
 	public void testPath() throws InterruptedException {
 		String dir = System.getProperty("user.dir");
 		System.out.println(dir);
+		System.out.println(File.separator);
 	}
 }

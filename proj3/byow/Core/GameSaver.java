@@ -1,21 +1,20 @@
 package byow.Core;
 
+import byow.TileEngine.*;
 import java.util.*;
 import java.io.*;
 
 public class GameSaver {
-	public static final String dir = System.getProperty("user.dir");
+	public static final File dir = new File(System.getProperty("user.dir"));
 
-	// TETile[][] world;
+	TETile[][] world;
 
-	// public void save() {
-	// 	FileWriter fw = new FileWriter("record.txt");
-	// 	try {
-	// 		if (saveFile.createNewFile()) {
-	// 			System.out.println();
-	// 		}
-	// 	} catch () {
+	public void save() {
+		try {
+			File gameRecord = new File(dir, "record.txt");
 
-	// 	}
-	// }
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+	}
 }
