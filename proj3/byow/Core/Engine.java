@@ -168,7 +168,7 @@ public class Engine {
 			throw new RuntimeException("The input string is not valid");
 		}
 		String numberStr = input.substring(1, input.length() - 1);
-        int seed = Integer.parseInt(numberStr);
+        long seed = Long.parseLong(numberStr);
 		WorldGenerator gen = new WorldGenerator(seed);
         TETile[][] finalWorldFrame = gen.nextWorld();
         return finalWorldFrame;

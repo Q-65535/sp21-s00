@@ -61,4 +61,10 @@ public class  WorldTest{
 			Thread.sleep(2000);
 		}
 	}
+
+	@Test
+	public void testPath() throws InterruptedException {
+		String dir = System.getProperty("user.dir");
+		System.out.println(dir);
+	}
 }
