@@ -3,27 +3,60 @@ package byow.Core;
 import byow.TileEngine.*;
 import edu.princeton.cs.introcs.StdDraw;
 import java.awt.*;
+import java.io.*;
+import java.util.*;
 
 public class Engine {
 	enum GameState {
 		INIT,
 		READSEED,
 		OPERATE,
+		COLON,
+		END,
 	}
 
-    TERenderer ter = new TERenderer();
+	public static final File dir = new File(System.getProperty("user.dir"));
     /* Feel free to change the width and height. */
-    public static final int WIDTH = 80;
-    public static final int HEIGHT = 80;
+    public static final int WIDTH = 40;
+    public static final int HEIGHT = 40;
 
 
+    TERenderer ter = new TERenderer();
 	private Coor avatarPosition;
 	private GameState gameState;
+	private long seed;
 	private TETile[][] world;
+	StringBuilder seedStrBuilder = new StringBuilder();
 
 
 	public Engine() {
 		this.gameState = GameState.INIT;
+	}
+
+	// Maybe not necessary to have all these getters?
+	public GameState getGameState() {
+		return this.gameState;
+	}
+
+	public long getSeed() {
+		return this.seed;
+	}
+
+	public Coor getAvatarPosition() {
+		return this.avatarPosition;
+	}
+
+	public TETile[][] getWorld() {
+		return this.world;
+	}
+
+	@Override
+	public String toString() {
+		if (world != null) {
+			return TETile.toString(world);
+		} else {
+			return "the world does not exist yet, cannot get the string representation.";
+		}
 	}
 
     /**
@@ -31,56 +64,99 @@ public class Engine {
      * including inputs from the main menu.
      */
     public void interactWithKeyboard() {
-		StringBuilder seedStrBuilder = new StringBuilder();
 		ter.initialize(WIDTH, HEIGHT);
-		StdDraw.setPenRadius(0.02);
 		StdDraw.setPenColor(230, 60, 57);
-		StdDraw.text(WIDTH/2, HEIGHT/2, "Press N to start inputing a seed");
-		StdDraw.show();
-		while (true) {
-			if (!StdDraw.hasNextKeyTyped()) {
-				continue;
+		while (gameState != GameState.END) {
+			// State may transit if the user press a key.
+			if (StdDraw.hasNextKeyTyped()) {
+				char typed = StdDraw.nextKeyTyped();
+				stateTransit(typed);
 			}
-			char typed =  StdDraw.nextKeyTyped();
-			switch(gameState) {
-			case INIT: {
-				if (typed == 'N') {
-					gameState = GameState.READSEED;
-					StdDraw.clear(new Color(0, 0, 0));
-					StdDraw.text(WIDTH*0.5, HEIGHT*0.8, "Enter the seed number (ends with S):");
-					StdDraw.show();
-				}
-				break;
-			}
-			case READSEED: {
-				if (Character.isDigit(typed)) {
-					seedStrBuilder.append(typed);
-					StdDraw.clear(new Color(0, 0, 0));
-					StdDraw.text(WIDTH*0.5, HEIGHT*0.8, "Enter the seed number (ends with S):");
-					StdDraw.text(WIDTH/2, HEIGHT/2, seedStrBuilder.toString());
-					StdDraw.show();
-				} else if (typed == 'S') {
-					String seedStr = seedStrBuilder.toString();
-					long seed = Long.parseLong(seedStr);
-					WorldGenerator gen = new WorldGenerator(seed);
-					world = gen.nextWorld(WIDTH, HEIGHT);
-					initAvatar();
-					world[avatarPosition.x][avatarPosition.y] = Tileset.AVATAR;
-					gameState = GameState.OPERATE;
-					ter.renderFrame(world);
-				} else {
-					throw new RuntimeException("the seed input is invalid");
-				}
-				break;
-			}
-			case OPERATE: {
-				move(typed);
-				ter.renderFrame(world);
-				break;
-			}
-			}
+			// Whatever happens, the content must be displayed.
+			displayContent();
 		}
-    }
+		System.exit(0);
+	}
+
+	// State transit according to the user input char.
+	private void stateTransit(char typed) {
+		switch(gameState) {
+		case INIT: {
+			if (typed == 'N' || typed == 'n') {
+				gameState = GameState.READSEED;
+			} else if (typed == 'L' || typed == 'l') {
+				load();
+				gameState = GameState.OPERATE;
+			}
+			break;
+		}
+		case READSEED: {
+			if (Character.isDigit(typed)) {
+				seedStrBuilder.append(typed);
+			} else if (typed == 'S' || typed == 's') {
+				String seedStr = seedStrBuilder.toString();
+				this.seed = Long.parseLong(seedStr);
+				WorldGenerator gen = new WorldGenerator(seed);
+				world = gen.nextWorld(WIDTH, HEIGHT);
+				initAvatar();
+				gameState = GameState.OPERATE;
+			} else {
+				throw new RuntimeException("the seed input is invalid");
+			}
+			break;
+		}
+		case OPERATE: {
+			if (typed == ':') {
+				gameState = GameState.COLON;
+			} else {
+				move(typed);
+			}
+			break;
+		}
+		case COLON: {
+			if (typed == 'Q' || typed == 'q') {
+				gameState = GameState.END;
+				save();
+			} else {
+				gameState = GameState.OPERATE;
+			}
+			break;
+		}
+		}
+	}
+
+	// Display what should be displayed in current game state.
+	public void displayContent() {
+		StdDraw.clear(new Color(0, 0, 0));
+		if (world != null) {
+			ter.drawFrame(world);
+		}
+		StdDraw.setPenColor(230, 60, 57);
+		drawHUD();
+		switch(gameState) {
+		case INIT: {
+			StdDraw.text(WIDTH*0.5, HEIGHT*0.8, "Welcome to my game!!!");
+			StdDraw.text(WIDTH/2, HEIGHT/2, "Press N to start inputing a seed");
+			StdDraw.text(WIDTH/2, HEIGHT/2.2, "Press L to load the previous game");
+
+			break;
+		}
+		case READSEED: {
+			StdDraw.text(WIDTH*0.5, HEIGHT*0.8, "Enter the seed number (ends with S):");
+			StdDraw.text(WIDTH/2, HEIGHT/2, seedStrBuilder.toString());
+			break;
+		}
+		case OPERATE: {
+			StdDraw.text(WIDTH*0.1, HEIGHT*0.03, "operating");
+			break;
+		}
+		case COLON: {
+			StdDraw.text(WIDTH*0.1, HEIGHT*0.03, "ready to quit (press q)?");
+			break;
+		}
+		}
+		StdDraw.show();
+	}
 
 	private void move(char action) {
 		if (world == null) {
@@ -124,8 +200,22 @@ public class Engine {
 			for (int j = 0; j < HEIGHT; j++) {
 				if (world[i][j] == Tileset.FLOOR) {
 					avatarPosition = new Coor(i, j);
+					world[avatarPosition.x][avatarPosition.y] = Tileset.AVATAR;
+					return;
 				}
 			}
+		}
+	}
+
+	private void drawHUD() {
+		int mouseX = (int)StdDraw.mouseX();
+		int mouseY = (int)StdDraw.mouseY();
+		if (world != null) {
+			// Prevent out of bounds.
+			if (mouseX < WIDTH &&mouseY < HEIGHT) {
+				StdDraw.text(WIDTH*0.1, HEIGHT*0.9, world[mouseX][mouseY].description());
+			}
+			StdDraw.text(WIDTH*0.12, HEIGHT*0.95, "(" + StdDraw.mouseX() + ", " + StdDraw.mouseY() + ")");
 		}
 	}
 
@@ -133,6 +223,86 @@ public class Engine {
 		world[x][y] = tile;
 	}
 
+	private void save() {
+		try {
+			// Save world state.
+			File worldStateRecord = new File(dir, "world.txt");
+			FileWriter fw = new FileWriter(worldStateRecord);
+			BufferedWriter bfw = new BufferedWriter(fw);
+			bfw.append(TETile.toString(world));
+			bfw.close();
+
+			// Save metadata.
+			// @Repetition: too many repetitions?
+			File metaRecord = new File(dir, "meta.txt");
+			fw = new FileWriter(metaRecord);
+			bfw = new BufferedWriter(fw);
+			// Save game seed.
+			bfw.append("seed: ");
+			bfw.append(String.valueOf(seed));
+			bfw.append("\n");
+			// Save avatar position.
+			bfw.append("avatar position: ");
+			bfw.append(avatarPosition.toString());
+			bfw.append("\n");
+			bfw.close();
+		} catch (IOException e) {
+			System.out.println("There was a problem when saving");
+			System.out.println(e);
+		}
+	}
+
+	private void load() {
+		try {
+			// Read metadata.
+			File worldStateRecord = new File(dir, "world.txt");
+			File metaRecord = new File(dir, "meta.txt");
+			if (!worldStateRecord.exists() || !metaRecord.exists()) {
+				System.exit(0);
+			}
+			Scanner sc = new Scanner(metaRecord);
+			while (sc.hasNextLine()) {
+				String record = sc.nextLine();
+				retrieveRecord(record);
+			}
+			WorldGenerator gen = new WorldGenerator(seed);
+			world = gen.nextWorld(WIDTH, HEIGHT);
+			world[avatarPosition.x][avatarPosition.y] = Tileset.AVATAR;
+
+			// Read world.
+			sc = new Scanner(worldStateRecord);
+			while (sc.hasNextLine()) {
+				String line = sc.nextLine();
+				for (int i = 0; i < line.length(); i++) {
+					
+				}
+			}
+
+
+		} catch (IOException e) {
+			System.out.println("There was a problem when loading");
+			System.out.println(e);
+		}
+	}
+
+	private void retrieveRecord(String record) {
+		String[] split = record.split(": ");
+		if (split.length != 2) {
+			throw new RuntimeException("The meta data format is incorrect");
+		}
+		String identifier = split[0];
+		String data = split[1];
+		switch (identifier) {
+		case "seed": {
+			seed = Long.parseLong(data);
+			break;
+		}
+		case "avatar position": {
+			this.avatarPosition = Coor.parseCoor(data);
+			break;
+		}
+		}
+	}
 
     /**
      * Method used for autograding and testing your code. The input string will be a series
@@ -163,16 +333,25 @@ public class Engine {
         //
         // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
         // that works for many different input types.
-		char firstChar = input.charAt(0);
-		char lastChar = input.charAt(input.length() - 1);
-		if ((firstChar != 'N' && firstChar != 'n')
-			|| lastChar != 'S' && lastChar != 's') {
-			throw new RuntimeException("The input string is not valid");
+		for (int i = 0; i < input.length(); i++) {
+			if (gameState != GameState.END) {
+				stateTransit(input.charAt(i));
+			} else {
+				break;
+			}
 		}
-		String numberStr = input.substring(1, input.length() - 1);
-        long seed = Long.parseLong(numberStr);
-		WorldGenerator gen = new WorldGenerator(seed);
-        TETile[][] finalWorldFrame = gen.nextWorld();
-        return finalWorldFrame;
+		return world;
+
+		// char firstChar = input.charAt(0);
+		// char lastChar = input.charAt(input.length() - 1);
+		// if ((firstChar != 'N' && firstChar != 'n')
+		// 	|| lastChar != 'S' && lastChar != 's') {
+		// 	throw new RuntimeException("The input string is not valid");
+		// }
+		// String numberStr = input.substring(1, input.length() - 1);
+        // long seed = Long.parseLong(numberStr);
+		// WorldGenerator gen = new WorldGenerator(seed);
+        // TETile[][] finalWorldFrame = gen.nextWorld();
+        // return finalWorldFrame;
     }
 }

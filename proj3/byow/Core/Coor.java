@@ -33,4 +33,26 @@ public class Coor {
 		result = 31 * result + y;
 		return result;
 	}
+
+	public static Coor parseCoor(String s) {
+		StringBuilder xstr = new StringBuilder();
+		StringBuilder ystr = new StringBuilder();
+		int index = 0;
+		boolean isFirstNumber = true;
+
+		for (; index < s.length(); index++) {
+			if (Character.isDigit(s.charAt(index))) {
+				if (isFirstNumber) {
+					xstr.append(s.charAt(index));
+				} else {
+					ystr.append(s.charAt(index));
+				}
+			} else if (s.charAt(index) == ',') {
+				isFirstNumber = false;
+			}
+		}
+		int x = Integer.parseInt(xstr.toString());
+		int y = Integer.parseInt(ystr.toString());
+		return new Coor(x, y);
+	}
 }

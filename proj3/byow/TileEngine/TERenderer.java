@@ -12,7 +12,7 @@ import java.awt.Font;
  * allowing scrolling of the screen or tracking the avatar or something similar.
  */
 public class TERenderer {
-    private static final int TILE_SIZE = 16;
+    private static final int TILE_SIZE = 32;
     private int width;
     private int height;
     private int xOffset;
@@ -97,5 +97,20 @@ public class TERenderer {
             }
         }
         StdDraw.show();
+    }
+    public void drawFrame(TETile[][] world) {
+        int numXTiles = world.length;
+        int numYTiles = world[0].length;
+        StdDraw.clear(new Color(0, 0, 0));
+        for (int x = 0; x < numXTiles; x += 1) {
+            for (int y = 0; y < numYTiles; y += 1) {
+                if (world[x][y] == null) {
+                    throw new IllegalArgumentException("Tile at position x=" + x + ", y=" + y
+                            + " is null.");
+                }
+                world[x][y].draw(x + xOffset, y + yOffset);
+            }
+        }
+        // StdDraw.show();
     }
 }

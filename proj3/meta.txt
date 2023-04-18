@@ -1,0 +1,2 @@
+seed: 311212
+avatar position: (27, 28)

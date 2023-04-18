@@ -189,4 +189,46 @@ public class TETile {
 
         return copy;
     }
+
+	public static TETile parseTETile(char c) {
+		switch (c) {
+		case '@': {
+			return Tileset.AVATAR;
+		}
+		case '#': {
+			return Tileset.WALL;
+		}
+		case '.': {
+			return Tileset.FLOOR;
+		}
+		case ' ': {
+			return Tileset.NOTHING;
+		}
+		case '"': {
+			return Tileset.GRASS;
+		}
+		case '≈': {
+			return Tileset.WATER;
+		}
+		case '❀': {
+			return Tileset.FLOWER;
+		}
+		case '█': {
+			return Tileset.LOCKED_DOOR;
+		}
+		case '▢': {
+			return Tileset.UNLOCKED_DOOR;
+		}
+		case '▒': {
+			return Tileset.SAND;
+		}
+		case '▲': {
+			return Tileset.MOUNTAIN;
+		}
+		case '♠': {
+			return Tileset.TREE;
+		}
+		}
+        return null;
+	}
 }
